@@ -35,9 +35,10 @@ const app = express();
 /**
  * Connect to MongoDB.
  */
-const dbConn = MongoClient.connect( process.env.MONGODB_URI || '', {} ).tehn( function( client ) {
-	return client.db( process.env.MONGO_DB || 'subs' );
-}).catch( err => console.log( err ) );
+//const dbConn = MongoClient.connect( process.env.MONGODB_URI || '', {} ).tehn( function( client ) {
+//	return client.db( process.env.MONGO_DB || 'subs' );
+//}).catch( err => console.log( err ) );
+const dbConn = await MongoClient.connect( process.env.MONGODB_URI || '', {} ).db( process.env.MONGO_DB || 'subs' );
 
 module.exports.dbConn = dbConn;
 

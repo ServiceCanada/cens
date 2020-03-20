@@ -16,20 +16,41 @@ var NotifyClient = require('notifications-node-client').NotifyClient; https://do
 //
 exports.addEmail = ( req, res, next ) => {
 
+	const mongo = context.conn.mongo;
+	
 	// Request param: email, topicId
+	
+	// Validate if email is the good format (something@something.tld)
 
 	// Select Topic where email $nin "subs"
-	// If not found, continue
-	// If found, 
-	//	-> Resend email notify
-	//	-> exit
+	const colTopic = dbConn.collection( "topics" );
+	
+	try {
+		const topic = await colTopic.findOne( { _id: topicId, subs: { $nin: [ email ] } } );
+		
+		console.log( topic );
+		
+		return resendEmailNotify( email, topicId, topic.templateId, topic.notifyKey )
+					.then( () => { 
+						// answer a positive JSON response
+						//res.redirect( topic.confirmSubUrl ) 
+					} )
+					.catch( ( e ) => {
+						// answer a negative JSON response + reason code
+					} );
+	} catch ( e ) { 
+	
+		// Expected to fail if no record is found
+		console.log( e );
+		
+	}
 
-	// Generate an simple Unique Code ( like now().miliseconds ).
+	// Generate an simple Unique Code ( like now().miliseconds )
 	// Insert in subsToConfirm
 	// Update - Add to topic subs array
 	// Send confirm email
 	
-	sendNotifyConfirmEmail( email, confirmCode, templateId, NotifyKey );
+	// sendNotifyConfirmEmail( email, confirmCode, templateId, NotifyKey );
 };
 
 //
