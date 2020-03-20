@@ -25,10 +25,6 @@ dotenv.config({
     path: '.env'
 });
 
-/**
- * Controllers (route handlers).
- */
-const subsController = require('./controllers/subscriptions');
 
 /**
  * Create Express server.
@@ -59,7 +55,14 @@ MongoClient.connect( process.env.MONGODB_URI || '', {} ).then( ( mongoInstance )
 	//    process.exit();
 	//});
 
+	
+	
+	/**
+	 * Controllers (route handlers).
+	 */
+	const subsController = require('./controllers/subscriptions');
 
+	
 
 	/**
 	 * Express configuration.
@@ -101,6 +104,7 @@ MongoClient.connect( process.env.MONGODB_URI || '', {} ).then( ( mongoInstance )
 	// app.get('/api/v0.1/subs/email/confirm', subsController.confirmEmail);
 	app.get('/subs/confirm/:subscode/:email', subsController.confirmEmail);
 	app.get('/subs/remove/:subscode/:email', subsController.removeEmail);
+	app.get('/subs/remove_unconfirm/:subscode/:email', subsController.removeUnconfirmEmail);
 	//app.get('/api/v0.1/subs/email/getAll', subsController.getAll);
 
 
