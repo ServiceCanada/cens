@@ -1,0 +1,34 @@
+{
+  "name": "x-notify",
+  "version": "0.1.0",
+  "description": "Subscription to receive update via Notify",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ServiceCanada/x-notify"
+  },
+  "license": "MIT",
+  "author": "Pierre Dubois",
+  "contributors": [
+    ""
+  ],
+  "scripts": {
+    "start": "nodemon -L subscriptions.js",
+    "prod": "node subscriptions.js",
+  },
+  "dependencies": {
+    "compression": "^1.7.4",
+    "dotenv": "^8.2.0",
+    "errorhandler": "^1.5.1",
+    "express": "^4.17.1",
+    "express-status-monitor": "^1.2.8",
+    "mongodb": "^3.5.5"
+    "morgan": "^1.9.1",
+    "notifications-node-client": "^4.7.2"
+    "passport": "^0.4.1",
+    "passport-http": "^0.3.0"
+  },
+  "engines": {
+    "node": ">=10.18.0",
+    "npm": ">=6.13.4"
+  }
+}
