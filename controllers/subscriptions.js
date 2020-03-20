@@ -6,17 +6,23 @@
  * @version: 0.1
  ===========================*/
 
- 
-const dbConn = module.parent.exports.dbConn;
-var NotifyClient = require('notifications-node-client').NotifyClient; https://docs.notifications.service.gov.uk/node.html#node-js-client-documentation
+const NotifyClient = require('notifications-node-client').NotifyClient; // https://docs.notifications.service.gov.uk/node.html#node-js-client-documentation
 
+const nbMinutesBF = process.env.notSendBefore || 25; // Default of 25 minutes.
+const failURL = process.env.notSendBefore || "https://canada.ca/" ; // Fail URL like if the email confirmation has failed
 
 //
 // Add email to the newSubscriberEmail
 //
-exports.addEmail = ( req, res, next ) => {
+// @return; a JSON response 
+//
+exports.addEmail = async ( req, res, next ) => {
+	
+	const dbConn = module.parent.exports.dbConn;
 
-	const mongo = context.conn.mongo;
+	const email = "pierre.dubois@servicecanada.gc.ca",
+		topicId = "test",
+		currDate = new Date();
 	
 	// Request param: email, topicId
 	
@@ -26,11 +32,12 @@ exports.addEmail = ( req, res, next ) => {
 	const colTopic = dbConn.collection( "topics" );
 	
 	try {
-		const topic = await colTopic.findOne( { _id: topicId, subs: { $nin: [ email ] } } );
-		
-		console.log( topic );
-		
-		return resendEmailNotify( email, topicId, topic.templateId, topic.notifyKey )
+		const topic = await colTopic.findOne( { _id: topicId, subs: { $nin: [ email ] } } ); // fyi - return null when there is no result.
+
+		// If email found, try to resend
+		if (! topic ) {
+			console.log( "RESEND confirm email: " + email );
+			return resendEmailNotify( email, topicId )
 					.then( () => { 
 						// answer a positive JSON response
 						//res.redirect( topic.confirmSubUrl ) 
@@ -38,17 +45,47 @@ exports.addEmail = ( req, res, next ) => {
 					.catch( ( e ) => {
 						// answer a negative JSON response + reason code
 					} );
+		}
+		
+		// We complete the transaction
+		console.log( topic );
+		
+		// Generate an simple Unique Code
+		const confirmCode = Math.floor(Math.random() * 999999) + "" + currDate.getMilliseconds(),
+			tId = topic.templateId,
+			nKey = topic.notifyKey;
+		
+		// Insert in subsToConfirm
+		await dbConn.collection( "subsToConfirmEmail" ).insertOne( {
+			email: email,
+			userCode: confirmCode,
+			topic_id: topicId,
+			notBefore: currDate.setMinutes( currDate.getMinutes() + nbMinutesBF ),
+			createAt: currDate,
+			tId: tId,
+			nKey: nKey,
+			cURL: topic.confirmSuccessURL
+		});
+		
+		// Update - Add to topic subs array
+		await colTopic.updateOne( 
+			{ _id: topicId },
+			{
+				$push: {
+					subs: email
+				}
+			});
+
+		// Send confirm email
+		sendNotifyConfirmEmail( email, confirmCode, tId, nKey );
+	
 	} catch ( e ) { 
 	
-		// Expected to fail if no record is found
+		// The query has not ran
 		console.log( e );
 		
 	}
 
-	// Generate an simple Unique Code ( like now().miliseconds )
-	// Insert in subsToConfirm
-	// Update - Add to topic subs array
-	// Send confirm email
 	
 	// sendNotifyConfirmEmail( email, confirmCode, templateId, NotifyKey );
 };
@@ -56,7 +93,7 @@ exports.addEmail = ( req, res, next ) => {
 //
 // Resend email notify
 //
-resendEmailNotify = ( email, topicId, templateId, NotifyKey ) = {
+resendEmailNotify = ( email, topicId ) => {
 	
 	// Select SubToConfirmed where Email + noResendBefore > 25min
 	// If not found, exit with success
@@ -72,12 +109,12 @@ resendEmailNotify = ( email, topicId, templateId, NotifyKey ) = {
 //
 // Send an email through Notify API
 //
-sendNotifyConfirmEmail = ( email, confirmCode, templateId, NotifyKey ) = {
+sendNotifyConfirmEmail = ( email, confirmCode, templateId, NotifyKey ) => {
 	
 	// There is 1 personalisation, the confirm links
 	// /subs/confirm/:subscode/:email
 	
-	var notifyClient = new NotifyClient( NotifyKey );
+	var notifyClient = new NotifyClient( "https://api.notification.alpha.canada.ca", NotifyKey );
 	
 	notifyClient
 		.sendEmail( templateId, email, {
@@ -92,6 +129,8 @@ sendNotifyConfirmEmail = ( email, confirmCode, templateId, NotifyKey ) = {
 //
 // Confirm subscription email
 //
+// @return; a HTTP redirection
+//
 exports.confirmEmail = ( req, res, next ) => {
 
 	// Request param: email, confirmCode
@@ -99,7 +138,7 @@ exports.confirmEmail = ( req, res, next ) => {
 	// findOneAndDelete()
 	
 	// Select docs in subToConfirms
-	// Not found -> exit error
+	// Not found -> exit error || Check if is already subscribed?
 	
 	// Create doc in subsConfirmed
 	// Create doc in subs_logs (async)
@@ -109,6 +148,8 @@ exports.confirmEmail = ( req, res, next ) => {
 
 //
 // Remove subscription email
+//
+// @return; a HTTP redirection
 //
 exports.removeEmail = ( req, res, next ) => {
 
@@ -127,6 +168,19 @@ exports.removeEmail = ( req, res, next ) => {
 //
 // Get all subscription associated to the email|phone
 //
-exports.getAll = (confirmCode, email, phone) = {
+exports.getAll = (confirmCode, email, phone) => {
 
 };
+
+
+/*
+todo. Notify error code logging
+
+.statusCode
+details
+
+*/
+
+
+
+
