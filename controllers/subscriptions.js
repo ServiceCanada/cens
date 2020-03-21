@@ -346,7 +346,7 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 				console.log( e );
 			});
 			
-			// TODO: evaluate if we need to trigger something
+			// TODO: evaluate if we need to trigger something else
 		});
 }
 
