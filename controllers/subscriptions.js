@@ -15,6 +15,15 @@ const dbConn = module.parent.exports.dbConn;
 
 const notifyCached = [];
 
+const processEnv = process.env,
+	_errorPage = processEnv.errorPage || "https://canada.ca",
+	_successJSO = processEnv.successJSO || { statusCode: "200" },
+	_cErrorsJSO = processEnv.cErrorsJSO ||  { statusCode: "400", msg: "Bad request" },
+	_sErrorsJSO = processEnv.sErrorsJSO ||  { statusCode: "500" },
+	_notifyEndPoint = processEnv.notifyEndPoint ||  "https://api.notification.alpha.canada.ca",
+	_confirmBaseURL = processEnv.confirmBaseURL ||  "https://apps.canada.ca/x-notify/subs/confirm/";
+
+
 //
 // Add email to the newSubscriberEmail
 //
@@ -23,15 +32,17 @@ const notifyCached = [];
 exports.addEmail = async ( req, res, next ) => {
 	
 	const reqbody = req.body,
-		email = reqbody.eml
+		email = reqbody.eml || "",
 		topicId = reqbody.tid,
 		currDate = new Date();
 	
-	// Request param: email, topicId
-	
 	// Validate if email is the good format (something@something.tld)
-	// TODO: validate parameters.
-
+	
+	if ( !email.match( /.+\@.+\..+/ ) || !topicId ) {
+		res.json( _cErrorsJSO );
+		return;
+	}
+	
 	// Select Topic where email $nin "subs"
 	const colTopic = dbConn.collection( "topics" );
 	
@@ -40,21 +51,18 @@ exports.addEmail = async ( req, res, next ) => {
 
 		// If email found, try to resend
 		if (! topic ) {
-			console.log( "RESEND confirm email: " + email );
+
 			return resendEmailNotify( email, topicId, currDate )
 					.then( () => { 
-						res.json( { statusCode: "200" } );
+						res.json( _successJSO );
 					} )
 					.catch( ( e ) => {
 						// answer a negative JSON response + reason code
 						console.log( e );
-						res.json( { statusCode: "500" } );
+						res.json( _sErrorsJSO );
 					} );
 		}
-		
-		// We complete the transaction
-		console.log( topic );
-		
+
 		// Generate an simple Unique Code
 		const confirmCode = Math.floor(Math.random() * 999999) + "" + currDate.getMilliseconds(),
 			tId = topic.templateId,
@@ -69,7 +77,7 @@ exports.addEmail = async ( req, res, next ) => {
 			createAt: currDate,
 			tId: tId,
 			nKey: nKey,
-			cURL: topic.confirmSuccessURL
+			cURL: topic.confirmURL
 		});
 		
 		// Update - Add to topic subs array
@@ -84,19 +92,154 @@ exports.addEmail = async ( req, res, next ) => {
 		// Send confirm email
 		sendNotifyConfirmEmail( email, confirmCode, tId, nKey );
 		
-		res.json( { statusCode: "200" } );
+		res.json( _successJSO );
 	
 	} catch ( e ) { 
 	
 		// The query has not ran
 		console.log( e );
 		
-		res.json( { statusCode: "500" } );
+		res.json( _sErrorsJSO );
 	}
 
-	
-	// sendNotifyConfirmEmail( email, confirmCode, templateId, NotifyKey );
 };
+
+
+//
+// Confirm subscription email
+//
+// @return; a HTTP redirection
+//
+exports.confirmEmail = ( req, res, next ) => {
+
+	// Request param: email, confirmCode
+	const { subscode, email } = req.params,
+		currDate = new Date();
+	
+	// TODO: validate parameters.
+
+	dbConn.collection( "subsUnconfirmed" )
+		.findOneAndDelete( { email: email, subscode: subscode } )
+		.then( async ( docSubs ) => {
+
+			const docValue = docSubs.value,
+				topicId = docValue.topicId;
+			
+			// move into confirmed list
+			await dbConn.collection( "subsConfirmed" ).insertOne( {
+				email: email,
+				subscode: subscode,
+				topicId: topicId
+			});
+
+			// subs_logs entry - this can be async
+			dbConn.collection( "subs_logs" ).updateOne( 
+				{ _id: email },
+				{
+					$setOnInsert: {
+						_id: email,
+						createdAt: currDate
+					},
+					$push: {
+						confirmEmail: {
+							createdAt: currDate,
+							topicId: topicId,
+							subscode: subscode
+						},
+						subsEmail: {
+							createdAt: docValue.createAt,
+							topicId: topicId,
+							subscode: subscode
+						}
+					},
+					$currentDate: { 
+						lastUpdated: true
+					}
+				},
+				{ upsert: true }
+			).catch( (e) => {
+				console.log( e );
+			});
+			
+			// Redirect to Generic page to confirm the email is removed
+			res.redirect( docValue.cURL );
+
+		})
+		.catch( () => {
+			res.redirect( _errorPage );
+		});
+};
+
+
+//
+// Remove subscription email
+//
+// @return; a HTTP redirection
+//
+exports.removeEmail = ( req, res, next ) => {
+
+	// Request param: email, confirmCode
+	const { subscode, email } = req.params,
+		currDate = new Date();
+	
+	// findOneAndDeleted in subsConfirmedEmail document
+	dbConn.collection( "subsConfirmed" )
+		.findOneAndDelete( { email: email, subscode: subscode } )
+		.then( ( docSubs ) => {
+			
+			const topicId = docSubs.value.topicId;
+			
+			// subs_logs entry - this can be async
+			dbConn.collection( "subs_logs" ).updateOne( 
+				{ _id: email },
+				{
+					$push: {
+						unsubsEmail: {
+							createdAt: currDate,
+							topicId: topicId,
+							subscode: subscode
+						}
+					},
+					$currentDate: { 
+						lastUpdated: true
+					}
+				}
+			).catch( (e) => {
+				console.log( e );
+			});
+			
+			// update topics
+			dbConn.collection( "topics" ).findOneAndUpdate( 
+				{ _id: topicId },
+				{
+					$pull: {
+						subs: email
+					}
+				},
+				{
+					projection: { unsubURL: 1 }
+				}).then( ( docTp ) => {
+					
+					// Redirect to Generic page to confirm the email is removed
+					res.redirect( docTp.value.unsubURL );
+
+				}).catch( ( e ) => {
+					console.log( e );
+				});
+			
+		} ).catch( () => {
+			res.redirect( _errorPage );
+		});
+};
+
+//
+// Get all subscription associated to the email|phone
+//
+exports.getAll = (confirmCode, email, phone) => {
+
+};
+
+
 
 //
 // Resend email notify
@@ -165,63 +308,33 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 	let notifyClient = notifyCached[ templateId ];
 	
 	if ( !notifyClient ) {
-		notifyClient = new NotifyClient( "https://api.notification.alpha.canada.ca", NotifyKey );
+		notifyClient = new NotifyClient( _notifyEndPoint, NotifyKey );
 		notifyCached[ templateId ] = notifyClient;
 	}
 	
-
-	await notifyClient.sendEmail( templateId, email, 
-		{
-			personalisation: { confirm_link: "https://apps.canada.ca/x-notify/subs/confirm/" + confirmCode + "/" + email },
-			reference: "x-notify_subs_confirm"
-		});
-}
-
-//
-// Confirm subscription email
-//
-// @return; a HTTP redirection
-//
-exports.confirmEmail = ( req, res, next ) => {
-
-	// Request param: email, confirmCode
-	const { subscode, email } = req.params,
-		currDate = new Date();
 	
-	// TODO: validate parameters.
-
-	dbConn.collection( "subsUnconfirmed" )
-		.findOneAndDelete( { email: email, subscode: subscode } )
-		.then( async ( docSubs ) => {
-
-			const docValue = docSubs.value,
-				topicId = docValue.topicId;
+	notifyClient.sendEmail( templateId, email, 
+		{
+			personalisation: { confirm_link: _confirmBaseURL + confirmCode + "/" + email },
+			reference: "x-notify_subs_confirm"
+		})
+		.catch( ( e ) => {
+			// Log the Notify errors
 			
-			// move into confirmed list
-			await dbConn.collection( "subsConfirmed" ).insertOne( {
-				email: email,
-				subscode: subscode,
-				topicId: topicId
-			});
-
+			const currDate = new Date();
+			
 			// subs_logs entry - this can be async
-			dbConn.collection( "subs_logs" ).updateOne( 
-				{ _id: email },
+			dbConn.collection( "notify_logs" ).updateOne( 
+				{ _id: templateId },
 				{
 					$setOnInsert: {
-						_id: email,
+						_id: templateId,
 						createdAt: currDate
 					},
 					$push: {
-						confirmEmail: {
+						errLogs: {
 							createdAt: currDate,
-							topicId: topicId,
-							subscode: subscode
-						},
-						subsEmail: {
-							createdAt: docValue.createAt,
-							topicId: topicId,
-							subscode: subscode
+							e: e
 						}
 					},
 					$currentDate: { 
@@ -233,128 +346,10 @@ exports.confirmEmail = ( req, res, next ) => {
 				console.log( e );
 			});
 			
-			// Redirect to Generic page to confirm the email is removed
-			res.redirect( docValue.cURL );
-
-		})
-		.catch( () => {
-			res.redirect( "https://universallabs.org" );
+			// TODO: evaluate if we need to trigger something
 		});
-};
+}
 
-
-//
-// Remove subscription of unconfirmed email
-//
-// @return; a HTTP redirection
-// @description: To ease testing
-//
-exports.removeUnconfirmEmail = ( req, res, next ) => {
-
-	// Request param: email, confirmCode
-	const { subscode, email } = req.params;
-		
-	dbConn.collection( "subsConfirmed" ).findOneAndDelete( { email: email, subscode: subscode } ).catch( () => {} );
-	
-	dbConn.collection( "subsUnconfirmed" )
-		.findOneAndDelete( { email: email, subscode: subscode } )
-		.then( ( docSubs ) => {
-
-			// update topics
-			dbConn.collection( "topics" ).updateOne( 
-			{ _id: docSubs.value.topicId },
-			{
-				$pull: {
-					subs: email
-				}
-			});
-
-			// Redirect to Generic page to confirm the email is removed
-			res.redirect( "https://universallabs.org/labs" );
-
-		} ).catch( () => {
-			res.redirect( "https://universallabs.org" );
-		});
-	
-
-};
-
-//
-// Remove subscription email
-//
-// @return; a HTTP redirection
-//
-exports.removeEmail = ( req, res, next ) => {
-
-	// Request param: email, confirmCode
-	const { subscode, email } = req.params,
-		currDate = new Date();;
-	
-	// findOneAndDeleted in subsConfirmedEmail document
-	dbConn.collection( "subsConfirmed" )
-		.findOneAndDelete( { email: email, subscode: subscode } )
-		.then( ( docSubs ) => {
-			
-			const topicId = docSubs.value.topicId;
-			
-			// subs_logs entry - this can be async
-			dbConn.collection( "subs_logs" ).updateOne( 
-				{ _id: email },
-				{
-					$push: {
-						unsubsEmail: {
-							createdAt: currDate,
-							topicId: topicId,
-							subscode: subscode
-						}
-					},
-					$currentDate: { 
-						lastUpdated: true
-					}
-				}
-			).catch( (e) => {
-				console.log( e );
-			});
-			
-			// update topics
-			dbConn.collection( "topics" ).findOneAndUpdate( 
-				{ _id: topicId },
-				{
-					$pull: {
-						subs: email
-					}
-				},
-				{
-					projection: { unsubsSuccessURL: 1 }
-				}).then( ( docTp ) => {
-					
-					// Redirect to Generic page to confirm the email is removed
-					res.redirect( docTp.value.unsubsSuccessURL || "https://universallabs.org/labs" );
-
-				}).catch( ( e ) => {
-					console.log( e );
-				});
-			
-		} ).catch( () => {
-			res.redirect( "https://universallabs.org" );
-		});
-};
-
-//
-// Get all subscription associated to the email|phone
-//
-exports.getAll = (confirmCode, email, phone) => {
-
-};
-
-
-/*
-todo. Notify error code logging
-
-.statusCode
-details
-
-*/
 
 
 

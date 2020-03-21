@@ -101,11 +101,12 @@ MongoClient.connect( process.env.MONGODB_URI || '', {} ).then( ( mongoInstance )
 	 * Subscriber routes.
 	 */
 	app.post('/api/v0.1/subs/email/add', subsController.addEmail);
-	// app.get('/api/v0.1/subs/email/confirm', subsController.confirmEmail);
+	//app.post('/api/v0.1/subs/email/confirm', subsController.confirmEmail); // TODO: need to handle data from "post"
+	//app.post('/api/v0.1/subs/email/remove', subsController.removeEmail); // TODO: need to handle data from "post"
+	
 	app.get('/subs/confirm/:subscode/:email', subsController.confirmEmail);
 	app.get('/subs/remove/:subscode/:email', subsController.removeEmail);
-	app.get('/subs/remove_unconfirm/:subscode/:email', subsController.removeUnconfirmEmail);
-	//app.get('/api/v0.1/subs/email/getAll', subsController.getAll);
+	// app.get('/api/v0.1/subs/email/getAll', subsController.getAll); // TODO: kept for later if we create a "subscription" management page.
 
 
 
@@ -117,7 +118,10 @@ MongoClient.connect( process.env.MONGODB_URI || '', {} ).then( ( mongoInstance )
 	// app.get('/api/v0.1/t-manager/:accessCode/:topic/bulk/add', managerController.addBulk);
 	// app.get('/api/v0.1/t-manager/:accessCode/:topic/bulk/remove', managerController.removeBulk);
 
-
+	/**
+	 * Admin routes.
+	 */
+	// app.get('/subs/remove_unconfirm/:subscode/:email', subsController.removeUnconfirmEmail);
 
 
 	/**
