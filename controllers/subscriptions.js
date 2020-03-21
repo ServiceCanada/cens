@@ -22,10 +22,9 @@ const notifyCached = [];
 //
 exports.addEmail = async ( req, res, next ) => {
 	
-	
-
-	const email = "pierre.dubois@servicecanada.gc.ca",
-		topicId = "test",
+	const reqbody = req.body,
+		email = reqbody.eml
+		topicId = reqbody.tid,
 		currDate = new Date();
 	
 	// Request param: email, topicId
@@ -254,10 +253,7 @@ exports.removeUnconfirmEmail = ( req, res, next ) => {
 
 	// Request param: email, confirmCode
 	const { subscode, email } = req.params;
-	
-	// TODO: validate parameters.
-
-	
+		
 	dbConn.collection( "subsConfirmed" ).findOneAndDelete( { email: email, subscode: subscode } ).catch( () => {} );
 	
 	dbConn.collection( "subsUnconfirmed" )
@@ -300,23 +296,6 @@ exports.removeEmail = ( req, res, next ) => {
 		.then( ( docSubs ) => {
 			
 			const topicId = docSubs.value.topicId;
-			let unsubURL;
-			
-			// update topics
-			dbConn.collection( "topics" ).findOneAndUpdate( 
-			{ _id: topicId },
-			{
-				$pull: {
-					subs: email
-				}
-			},
-			{
-				projection: { unsubsSuccessURL }
-			}).then( ( docTp ) => {
-				unsubURL = docTp.value.unsubsSuccessURL;
-			}).catch( ( e ) => {
-				console.log( e );
-			});
 			
 			// subs_logs entry - this can be async
 			dbConn.collection( "subs_logs" ).updateOne( 
@@ -336,10 +315,26 @@ exports.removeEmail = ( req, res, next ) => {
 			).catch( (e) => {
 				console.log( e );
 			});
+			
+			// update topics
+			dbConn.collection( "topics" ).findOneAndUpdate( 
+				{ _id: topicId },
+				{
+					$pull: {
+						subs: email
+					}
+				},
+				{
+					projection: { unsubsSuccessURL: 1 }
+				}).then( ( docTp ) => {
+					
+					// Redirect to Generic page to confirm the email is removed
+					res.redirect( docTp.value.unsubsSuccessURL || "https://universallabs.org/labs" );
 
-			// Redirect to Generic page to confirm the email is removed
-			res.redirect( unsubURL || "https://universallabs.org/labs" );
-
+				}).catch( ( e ) => {
+					console.log( e );
+				});
+			
 		} ).catch( () => {
 			res.redirect( "https://universallabs.org" );
 		});
