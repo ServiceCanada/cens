@@ -110,6 +110,21 @@ db.topics.insertOne( {
 })
 ```
 
+Create a topic detail
+
+```
+db.topics_details.insertOne( {
+    _id: "test2",
+    accessCode: [ "123456" ],
+	createdAt: ISODate( "2020-03-21T00:00:00.000-04:00" ),
+	lastUpdated: ISODate( "2020-03-21T00:00:00.000-04:00" ),
+	groupName: "Department Name",
+	description: "Used for this service, related to request #",
+	lang: "en",
+	langAlt: [ "test" ]
+})
+```
+
 Remove a user from the subs
 
 ```
@@ -144,3 +159,5 @@ todo
 * API end point: https://apps.canada.ca/x-notify/api/v0.1/subs/email/add
 * Confirmation link: https://apps.canada.ca/x-notify/subs/confirm/
 * Remove link: https://apps.canada.ca/x-notify/subs/remove/
+
+* Get subscriber list: https://apps.canada.ca/x-notify/api/v0.1/t-manager/123456/test/topic/list

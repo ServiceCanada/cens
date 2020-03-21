@@ -17,9 +17,9 @@ const notifyCached = [];
 
 const processEnv = process.env,
 	_errorPage = processEnv.errorPage || "https://canada.ca",
-	_successJSO = processEnv.successJSO || { statusCode: "200" },
-	_cErrorsJSO = processEnv.cErrorsJSO ||  { statusCode: "400", msg: "Bad request" },
-	_sErrorsJSO = processEnv.sErrorsJSO ||  { statusCode: "500" },
+	_successJSO = processEnv.successJSO || { statusCode: 200, ok: 1 },
+	_cErrorsJSO = processEnv.cErrorsJSO ||  { statusCode: 400, bad: 1, msg: "Bad request" },
+	_sErrorsJSO = processEnv.sErrorsJSO ||  { statusCode: 500, err: 1 },
 	_notifyEndPoint = processEnv.notifyEndPoint ||  "https://api.notification.alpha.canada.ca",
 	_confirmBaseURL = processEnv.confirmBaseURL ||  "https://apps.canada.ca/x-notify/subs/confirm/";
 

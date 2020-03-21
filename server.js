@@ -61,6 +61,7 @@ MongoClient.connect( process.env.MONGODB_URI || '', {} ).then( ( mongoInstance )
 	 * Controllers (route handlers).
 	 */
 	const subsController = require('./controllers/subscriptions');
+	const managersController = require('./controllers/managers');
 
 	
 
@@ -108,9 +109,9 @@ MongoClient.connect( process.env.MONGODB_URI || '', {} ).then( ( mongoInstance )
 	/**
 	 * Manager routes.
 	 */
-	// app.get('/api/v0.1/t-manager/:accessCode/:topic/topic/list', managerController.getList);
-	// app.get('/api/v0.1/t-manager/:accessCode/:topic/bulk/add', managerController.addBulk);
-	// app.get('/api/v0.1/t-manager/:accessCode/:topic/bulk/remove', managerController.removeBulk);
+	app.get('/api/v0.1/t-manager/:accessCode/:topicId/topic/list', managersController.getTopicSubs);
+	// app.get('/api/v0.1/t-manager/:accessCode/:topicId/bulk/add', managersController.addBulk);
+	// app.get('/api/v0.1/t-manager/:accessCode/:topicId/bulk/remove', managersController.removeBulk);
 
 	/**
 	 * Admin routes.
