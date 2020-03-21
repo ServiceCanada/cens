@@ -187,7 +187,7 @@ exports.confirmEmail = ( req, res, next ) => {
 
 	// Request param: email, confirmCode
 	const { subscode, email } = req.params,
-		currDate = new Date();;
+		currDate = new Date();
 	
 	// TODO: validate parameters.
 
@@ -291,16 +291,58 @@ exports.removeUnconfirmEmail = ( req, res, next ) => {
 exports.removeEmail = ( req, res, next ) => {
 
 	// Request param: email, confirmCode
-	const { subscode, email } = req.params;
+	const { subscode, email } = req.params,
+		currDate = new Date();;
 	
 	// findOneAndDeleted in subsConfirmedEmail document
-	// Create subs_log
-	
-	// Get topic unsubs redirect link
-	
-	// Remove the email in the "subs" list in Topics (FindOneAndUpdate)
-	
-	// Redirect to confirm page
+	dbConn.collection( "subsConfirmed" )
+		.findOneAndDelete( { email: email, subscode: subscode } )
+		.then( ( docSubs ) => {
+			
+			const topicId = docSubs.value.topicId;
+			let unsubURL;
+			
+			// update topics
+			dbConn.collection( "topics" ).findOneAndUpdate( 
+			{ _id: topicId },
+			{
+				$pull: {
+					subs: email
+				}
+			},
+			{
+				projection: { unsubsSuccessURL }
+			}).then( ( docTp ) => {
+				unsubURL = docTp.value.unsubsSuccessURL;
+			}).catch( ( e ) => {
+				console.log( e );
+			});
+			
+			// subs_logs entry - this can be async
+			dbConn.collection( "subs_logs" ).updateOne( 
+				{ _id: email },
+				{
+					$push: {
+						unsubsEmail: {
+							createdAt: currDate,
+							topicId: topicId,
+							subscode: subscode
+						}
+					},
+					$currentDate: { 
+						lastUpdated: true
+					}
+				}
+			).catch( (e) => {
+				console.log( e );
+			});
+
+			// Redirect to Generic page to confirm the email is removed
+			res.redirect( unsubURL || "https://universallabs.org/labs" );
+
+		} ).catch( () => {
+			res.redirect( "https://universallabs.org" );
+		});
 };
 
 //
