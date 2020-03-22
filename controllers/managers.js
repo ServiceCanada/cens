@@ -72,7 +72,7 @@ exports.getTopicSubs = async ( req, res, next ) => {
 			let i, i_len = docsItems.length, i_cache;
 			for( i = 0; i !== i_len; i++) {
 				i_cache = docsItems[ i ];				
-				csv += '"' + i_cache.email + '","' + _unsubBaseURL + i_cache.subscode + "/" + i_cache.email + '\r\n';
+				csv += '"' + i_cache.email + '","' + _unsubBaseURL + i_cache.subscode + "/" + i_cache.email + '"\r\n';
 			}
 
 			// Send the file
