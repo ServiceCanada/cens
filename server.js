@@ -42,7 +42,7 @@ const app = express();
 
 MongoClient.connect( process.env.MONGODB_URI || '', {} ).then( ( mongoInstance ) => {
 
-	module.exports.dbConn = mongoInstance.db( process.env.MONGO_DB || 'subs' );
+	module.exports.dbConn = mongoInstance.db( process.env.MONGODB_NAME || 'subs' );
 
 	//mongoose.set('useFindAndModify', false);
 	//mongoose.set('useCreateIndex', true);
@@ -139,7 +139,7 @@ MongoClient.connect( process.env.MONGODB_URI || '', {} ).then( ( mongoInstance )
 		console.log('%s App is running at http://localhost:%d in %s mode', chalk.green('✓'), app.get('port'), app.get('env'));
 		console.log('  Press CTRL-C to stop\n');
 	});
-}).catch( (e) => { console.log( "MongoDB ERRROR: " + e ) } );
+}).catch( (e) => { console.log( "%s MongoDB ERRROR: %s", chalk.red('✗'), e ) } );
 
 module.exports = app;
 

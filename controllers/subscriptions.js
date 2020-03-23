@@ -323,7 +323,7 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 			
 			const currDate = new Date();
 			
-			// subs_logs entry - this can be async
+			// notify_logs entry - this can be async
 			dbConn.collection( "notify_logs" ).updateOne( 
 				{ _id: templateId },
 				{

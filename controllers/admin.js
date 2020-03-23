@@ -1,13 +1,17 @@
-
-
-
-admins
-* addTopic
-* updateTopic
-* deleteTopic
-* confirmSubs
-* validateTemplateConfig // Send a test email confirmation email to the specified email address
-
+/*==========================
+ * Admin
+ *
+ * @description: Have a simpler way of dealing with manipulations in the database
+ * @author: Government of Canada; @duboisp; @GormFrank
+ * @version: 0.1
+ *
+ * addTopic
+ * updateTopic
+ * deleteTopic
+ * confirmSubs
+ * validateTemplateConfig
+ * Send a test email confirmation email to the specified email address
+ ===========================*/
 
 //
 // Remove subscription of unconfirmed email
@@ -37,10 +41,10 @@ exports.removeUnconfirmEmail = ( req, res, next ) => {
 			});
 
 			// Redirect to Generic page to confirm the email is removed
-			res.redirect( "https://universallabs.org/labs" );
+			res.redirect( "https://canada.ca/en.html" );
 
 		} ).catch( () => {
-			res.redirect( "https://universallabs.org" );
+			res.redirect( "https://canada.ca/fr.html" );
 		});
 };
 
