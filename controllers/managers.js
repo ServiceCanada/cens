@@ -41,17 +41,38 @@ exports.getTopicSubs = async ( req, res, next ) => {
 			}
 		}
 	).then( ( docTopic ) => {
-		
+
 		if ( !docTopic.value ) {
 			
-			// TODO: log
+			// log access denied
+			dbConn.collection( "topics_logs" ).updateOne( 
+				{ _id: topicId },
+				{
+					$setOnInsert: {
+						_id: topicId,
+						createdAt: currDate
+					},
+					$push: {
+						denied: {
+							createdAt: currDate,
+							accessCode: accessCode
+						}
+					},
+					$currentDate: { 
+						lastUpdated: true
+					}
+				},
+				{ upsert: true }
+			).catch( (e) => {
+				console.log( e );
+			});
 		
 			res.json( { statusCode: 401, nal: 1 } );
 			return;
 		}
 		
 		// Get all the emails for the given topic
-		docs = dbConn.collection( "subsConfirmed" ).find(
+		let docs = dbConn.collection( "subsConfirmed" ).find(
 			{
 				topicId: topicId
 			},
@@ -62,7 +83,30 @@ exports.getTopicSubs = async ( req, res, next ) => {
 					subscode: 1
 				}
 			}
-		)
+		);
+
+		// log access granted
+		dbConn.collection( "topics_logs" ).updateOne( 
+			{ _id: topicId },
+			{
+				$setOnInsert: {
+					_id: topicId,
+					createdAt: currDate
+				},
+				$push: {
+					granted: {
+						createdAt: currDate,
+						accessCode: accessCode
+					}
+				},
+				$currentDate: { 
+					lastUpdated: true
+				}
+			},
+			{ upsert: true }
+		).catch( (e) => {
+			console.log( e );
+		});
 
 		let csv = '"email address","unsub"\r\n'; // Need to change this for a stream.
 
@@ -79,10 +123,9 @@ exports.getTopicSubs = async ( req, res, next ) => {
 			res.setHeader( "Content-disposition", "attachment; filename=" + topicId + "-" + currDate.getTime() + ".csv" );
 			res.set( "Content-Type", "text/csv" );
 			res.status( 200 ).send( csv );
-			
+
 			res.end();
 		} );
-
 		
 	}).catch( (e) => {
 		console.log( e );
