@@ -29,13 +29,6 @@ exports.getTopicSubs = async ( req, res, next ) => {
 			accessCode: { $in: [ accessCode ] }
 		},
 		{
-			$push: {
-				retrieving : {
-					createdAt: currDate,
-					tId: topicId,
-					code: accessCode
-				}
-			},
 			$currentDate: { 
 				lastUpdated: true
 			}
