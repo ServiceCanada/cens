@@ -1,0 +1,103 @@
+# Manager
+
+Below are breakdowns and descriptions of manager related entities, followed by related working examples.
+
+## Topics
+
+A topic could be compared to a mailing list.
+
+`_id`
+
+Raw string identifier for a topic. Could be a keyword.
+
+`subs`
+
+Array of strings which are emails subscribed to the list. Emails part of that list include confirmed and unconfirmed emails.
+
+**Updates when:** A user fills out the form to subscribe to a topic.
+
+`templateId`
+
+Notify API key for the specific email template related to this topic confirmation email in a string.
+
+`notifyKey`
+
+Notify API key for this Service in string. Services in Notify are split by "From" emails amongst other things.
+
+`confirmURL`
+
+String of the URL to the page to which user is redirected when they confirmed their subscription by clicking the link in the confirmation email.
+
+`unsubURL`
+
+String of the URL to the page to which user is redirected when they unsubscribe from their subscription by clicking the unsubscribe link in an email.
+
+
+## Topics Details
+
+Contains details about each topics.
+
+`_id`
+
+Raw string that matches the according topic ID.
+
+`accessCode`
+
+Simple string that adds a layer of validation to allow managing users to do restricted things like exporting topic emails list in CSV.
+
+`createdAt`
+
+Date of when the topic details are created.
+
+`lastUpdated`
+
+Date of last time a validation against the accessCode has been done.
+
+**Updates when:** Every time a validation against the accessCode is done e.i. for export to CSV.
+
+`groupName`
+
+String containing name of a department responsible for the need to create such topic.
+
+`description`
+
+Description of the topic and its reason to exist, in a string.
+
+`lang`
+
+String that defines what language this topic is in abbrevation form.
+
+`langAlt`
+
+Array of pointers to other languages counterparts for the same topic. Needs ID in string of those other topics.
+
+
+## MongoDB commands
+
+### Create a topic
+
+```
+db.topics.insertOne( {
+    _id: "test2",
+    subs: [],
+    templateId: "ca38197f-8783-4484-bed9-d3ecdafe6f42",
+    notifyKey: "testsubscriptionservicepierremac-e738cd64-a9f2-4610-904a-d523b844c748-5fbc5262-6a00-42f3-828a-e861c3100ea0",
+    confirmURL: "https://canada.ca/en.html",
+    unsubURL: "https://canada.ca/en.html"
+})
+```
+
+### Create a topic detail
+
+```
+db.topics_details.insertOne( {
+    _id: "test2",
+    accessCode: [ "123456" ],
+	createdAt: ISODate( "2020-03-21T00:00:00.000-04:00" ),
+	lastUpdated: ISODate( "2020-03-21T00:00:00.000-04:00" ),
+	groupName: "Department Name",
+	description: "Used for this service, related to request #",
+	lang: "en",
+	langAlt: [ "test" ]
+})
+```
