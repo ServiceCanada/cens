@@ -15,7 +15,7 @@ const path = require('path');
 const chalk = require('chalk'); // To color message in console log 
 
 const passport = require('passport'); // Authentication	 
-const DigestStrategy = require('passport-http').DigestStrategy;
+const BasicStrategy = require('passport-http').BasicStrategy;
 
 const MongoClient = require('mongodb').MongoClient;
 
@@ -32,13 +32,12 @@ dotenv.config({
 // 
 // HTTP auth
 //
-passport.use(new DigestStrategy({ qop: 'auth' },
-  function(username, cb) {
-	return cb(null, processEnv.user, processEnv.password);
-  },
-  function(params, done) {
-    // validate nonces as necessary
-    done(null, true)
+passport.use(new BasicStrategy({ qop: 'auth' },
+  function( user, pass, cb ) {
+	if( user !== processEnv.user || pass !== processEnv.password ) {
+		return cb( null, false );
+	}
+	return cb( null, user );
   }
 ));
 
@@ -76,7 +75,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {} ).then( ( mongoInstance ) 
 	app.use(compression());
 	app.use(logger( processEnv.LOG_FORMAT || 'dev'));
 
-	app.use(express.json()) // for parsing application/json
+	app.use(express.json()); // for parsing application/json
 
 
 	app.disable('x-powered-by');
@@ -86,17 +85,13 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {} ).then( ( mongoInstance ) 
 	 * Subscriber routes.
 	 */
 	app.post('/api/v0.1/subs/email/add',
-		passport.authenticate('digest', { session: false }),
+		passport.authenticate('basic', { session: false }),
 		subsController.addEmail);
 	//app.post('/api/v0.1/subs/email/confirm', subsController.confirmEmail); // TODO: need to handle data from "post"
 	//app.post('/api/v0.1/subs/email/remove', subsController.removeEmail); // TODO: need to handle data from "post"
 	
-	app.get('/subs/confirm/:subscode/:email',
-		passport.authenticate('digest', { session: false }),
-		subsController.confirmEmail);
-	app.get('/subs/remove/:subscode/:email',
-		passport.authenticate('digest', { session: false }),
-		subsController.removeEmail);
+	app.get('/subs/confirm/:subscode/:email', subsController.confirmEmail);
+	app.get('/subs/remove/:subscode/:email', subsController.removeEmail);
 	// app.get('/api/v0.1/subs/email/getAll', subsController.getAll); // TODO: kept for later if we create a "subscription" management page.
 
 
