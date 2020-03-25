@@ -104,18 +104,18 @@ db.collection('topics').createIndex(
 );
 
 db.collection('topics_details').createIndex(
-	{ _id: 1, subs: 1 }
+	{ _id: 1, accessCode: 1 }
 );
 
 
 db.collection('subsUnconfirmed').createIndexes( [
-	{ email: 1, subscode: 1 }.
+	{ email: 1, subscode: 1 },
 	{ email: 1, notBefore: 1 }
 ]);
 
 
 db.collection('subsConfirmed').createIndexes( [
-	{ email: 1, subscode: 1 }.
+	{ email: 1, subscode: 1 },
 	{ topicId: 1, email: 1 }
 
 ]);
