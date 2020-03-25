@@ -8,9 +8,6 @@
 
 const NotifyClient = require('notifications-node-client').NotifyClient; // https://docs.notifications.service.gov.uk/node.html#node-js-client-documentation
 
-const nbMinutesBF = process.env.notSendBefore || 25; // Default of 25 minutes.
-const failURL = process.env.notSendBefore || "https://canada.ca/" ; // Fail URL like if the email confirmation has failed
-
 const dbConn = module.parent.exports.dbConn;
 
 const notifyCached = [];
@@ -21,7 +18,8 @@ const processEnv = process.env,
 	_cErrorsJSO = processEnv.cErrorsJSO ||  { statusCode: 400, bad: 1, msg: "Bad request" },
 	_sErrorsJSO = processEnv.sErrorsJSO ||  { statusCode: 500, err: 1 },
 	_notifyEndPoint = processEnv.notifyEndPoint ||  "https://api.notification.alpha.canada.ca",
-	_confirmBaseURL = processEnv.confirmBaseURL ||  "https://apps.canada.ca/x-notify/subs/confirm/";
+	_confirmBaseURL = processEnv.confirmBaseURL ||  "https://apps.canada.ca/x-notify/subs/confirm/",
+	nbMinutesBF = processEnv.notSendBefore || 25; // Default of 25 minutes.
 
 
 //
@@ -47,7 +45,15 @@ exports.addEmail = async ( req, res, next ) => {
 	const colTopic = dbConn.collection( "topics" );
 	
 	try {
-		const topic = await colTopic.findOne( { _id: topicId, subs: { $nin: [ email ] } } ); // fyi - return null when there is no result.
+		const topic = await colTopic.findOne( 
+			{ _id: topicId, subs: { $nin: [ email ] } },
+			{ projection: {
+					_id: 0,
+					templateId: 1,
+					notifyKey: 1,
+					confirmURL: 1
+				} 
+			} ); // fyi - return null when there is no result.
 
 		// If email found, try to resend
 		if (! topic ) {

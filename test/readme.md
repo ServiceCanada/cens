@@ -103,8 +103,8 @@ Create a topic
 db.topics.insertOne( {
     _id: "test2",
     subs: [],
-    templateId: "ca38197f-8783-4484-bed9-d3ecdafe6f42",
-    notifyKey: "testsubscriptionservicepierremac-e738cd64-a9f2-4610-904a-d523b844c748-5fbc5262-6a00-42f3-828a-e861c3100ea0",
+    templateId: "<template id available in the template in Notify>",
+    notifyKey: "<A valid Notify API key>",
     confirmURL: "https://canada.ca/en.html",
     unsubURL: "https://canada.ca/en.html"
 })
@@ -132,7 +132,7 @@ db.topics.updateOne(
 	{ _id: "test" },
 	{
 		$pull: {
-			subs: "pierre.dubois@servicecanada.gc.ca"
+			subs: "<email....>"
 		}
 	});
 ```
