@@ -114,9 +114,12 @@ db.collection('subsUnconfirmed').createIndexes( [
 ]);
 
 
-db.collection('subsConfirmed').createIndexes( [
+db.subsConfirmed.createIndex(
 	{ email: 1, subscode: 1 },
-	{ topicId: 1, email: 1 }
-
-]);
+	{ unique: true }
+);
+db.subsConfirmed.createIndex(
+	{ topicId: 1, email: 1 },
+	{ unique: true }
+);
 ```
