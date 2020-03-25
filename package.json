@@ -12,7 +12,7 @@
     ""
   ],
   "scripts": {
-    "start": "nodemon -L server.js",
+    "start": "node server.js",
     "prod": "node server.js"
   },
   "dependencies": {
