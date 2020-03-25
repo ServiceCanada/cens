@@ -6,6 +6,8 @@
 const express = require('express'); // HTTP server
 const compression = require('compression'); // gzip for the HTTP body
 
+const bodyParser = require('body-parser');
+
 const logger = require('morgan'); // HTTP request logger
 
 const expressStatusMonitor = require('express-status-monitor'); // Monitor of the service (CPU/Mem,....)
@@ -31,6 +33,11 @@ dotenv.config({
  */
 const app = express();
 
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended:true}));
+
+app.use(express.json({limit: '50mb'}));
+app.use(express.urlencoded({limit: '50mb'}));
 
 /**
  * Connect to MongoDB.
@@ -109,9 +116,10 @@ MongoClient.connect( process.env.MONGODB_URI || '', {} ).then( ( mongoInstance )
 	/**
 	 * Manager routes.
 	 */
-	app.get('/api/v0.1/t-manager/:accessCode/:topicId/topic/list', managersController.getTopicSubs);
-	// app.get('/api/v0.1/t-manager/:accessCode/:topicId/bulk/add', managersController.addBulk);
-	// app.get('/api/v0.1/t-manager/:accessCode/:topicId/bulk/remove', managersController.removeBulk);
+	//app.param('/api/v0.1/t-manager/:code/:topic', managersController.validateCodeTopic);
+	app.get('/api/v0.1/t-manager/:accessCode/:topicId/list', managersController.getTopicSubs);
+	app.get('/api/v0.1/t-manager/:accessCode/:topicId/bulk/form', managersController.serveBulkForm);
+	app.post('/api/v0.1/t-manager/:accessCode/:topicId/bulk/action', managersController.actionBulk);
 
 	/**
 	 * Admin routes.

@@ -20,10 +20,11 @@ exports.getTopicSubs = async ( req, res, next ) => {
 	
 	// Params: accessCode, topicId
 	const { accessCode, topicId } = req.params,
-		currDate = new Date();
+		currDate = new Date(),
+		task = "list";
 	
 	// Validate the accessCode and logs
-	dbConn.collection( "topics_details" ).findOneAndUpdate( 
+	dbConn.collection( "topics_details" ).findOneAndUpdate(
 		{ 
 			_id: topicId,
 			accessCode: { $in: [ accessCode ] }
@@ -38,24 +39,21 @@ exports.getTopicSubs = async ( req, res, next ) => {
 		if ( !docTopic.value ) {
 			
 			// log access denied
-			dbConn.collection( "topics_logs" ).updateOne( 
+			dbConn.collection( "topics_details" ).updateOne(
 				{ _id: topicId },
 				{
-					$setOnInsert: {
-						_id: topicId,
-						createdAt: currDate
-					},
 					$push: {
 						denied: {
 							createdAt: currDate,
-							accessCode: accessCode
+							accessCode: accessCode,
+							task: task,
+							granted: false
 						}
 					},
 					$currentDate: { 
 						lastUpdated: true
 					}
-				},
-				{ upsert: true }
+				}
 			).catch( (e) => {
 				console.log( e );
 			});
@@ -79,24 +77,21 @@ exports.getTopicSubs = async ( req, res, next ) => {
 		);
 
 		// log access granted
-		dbConn.collection( "topics_logs" ).updateOne( 
+		dbConn.collection( "topics_details" ).updateOne(
 			{ _id: topicId },
 			{
-				$setOnInsert: {
-					_id: topicId,
-					createdAt: currDate
-				},
 				$push: {
-					granted: {
+					access: {
 						createdAt: currDate,
-						accessCode: accessCode
+						accessCode: accessCode,
+						task: task,
+						granted: true
 					}
 				},
 				$currentDate: { 
 					lastUpdated: true
 				}
-			},
-			{ upsert: true }
+			}
 		).catch( (e) => {
 			console.log( e );
 		});
@@ -127,22 +122,173 @@ exports.getTopicSubs = async ( req, res, next ) => {
 };
 
 
+//
+// prompt users with a form
+//
+// @return; an HTML blob
+//
+exports.serveBulkForm = ( req, res, next ) => {
 
-//
-// get subscription for a topic
-//
-// @return; a JSON response
-//
-exports.addBulk = async ( req, res, next ) => {
+	// Params: accessCode, topicId
+	const { accessCode, topicId } = req.params;
 
+	res.status( 200 ).send( '<!DOCTYPE html>\n' +
+		'<html lang="en">\n' +
+		'<head>\n' +
+		'<title>Bulk action emails</title>\n' +
+		'</head>\n' +
+		'<body>\n' +
+		'	<form action="/api/v0.1/t-manager/' + accessCode + '/' + topicId + '/bulk/action" method="post">\n' +
+		'		<fieldset>\n' +  
+		'			<legend>Do you wish to subscribe or unsubscribe emails:</legend>\n' +   
+		'			<label><input name="action" type="radio" value="add"> Subscribe</label><br>\n' +
+		'			<label><input name="action" type="radio" value="remove"> Unsubscribe</label><br>\n' +
+		'		</fieldset><br><br>\n' + 
+		'		<label for="emails">List of emails to action (one email address per line):<br>\n' +
+		'		<textarea id="emails" name="emails" rows="25" cols="50" required></textarea><br>\n' +
+		'		<input type="submit" value="Add">\n' +
+		'	</form>\n' +
+		'</body>\n' +
+		'</html>' 
+	);
 };
 
 
 //
-// get subscription for a topic
+// Bulk action multiple emails to a topic (assume implicit consent)
 //
 // @return; a JSON response
 //
-exports.removeBulk = async ( req, res, next ) => {
+exports.actionBulk = async ( req, res, next ) => {
+
+	// Params: accessCode, topicId
+	const body = req.body,
+		action = body.action,
+		task = "bulk",
+		currDate = new Date(),
+		{ accessCode, topicId } = req.params;
+	
+	let emails = body.emails,
+		granted;
+
+	// Validation of input
+	if( !emails ) {
+		res.send({
+			status: false,
+			message: 'No emails added'
+		});
+		return;
+	}
+	
+	// Validate the accessCode and logs
+	await dbConn.collection( "topics_details" ).findOne(
+		{
+			_id: topicId,
+			accessCode: { $in: [ accessCode ] }
+		}
+	).then( ( docTopic ) => {
+
+		granted = docTopic;
+			
+		// log access granted or denied
+		dbConn.collection( "topics_details" ).updateOne(
+			{ _id: topicId },
+			{
+				$push: {
+					access: {
+						createdAt: currDate,
+						accessCode: accessCode,
+						granted: granted,
+						task: task
+					}
+				},
+				$currentDate: { 
+					lastUpdated: true
+				}
+			}
+		).catch( (e) => {
+			console.log( e );
+		});
+		
+	}).catch( (e) => {
+		console.log( e );
+	});
+	
+	if(!granted) {
+		res.json( { statusCode: 401, nal: 1 } );
+		return;
+	}
+
+	emails = emails.replace(/\r/g, '').split('\n');
+
+	switch( action ) {
+		case "remove":
+			//await removeBulk( emails, topicId, currDate );
+			break;
+		case "add":
+		default:
+			await addBulk( emails, topicId, currDate );
+			break;
+	}
+
+	// Send response and return a page with a successful message
+	res.status( 200 ).send( '<!DOCTYPE html>\n' +
+		'<html lang="en">\n' +
+		'<head>\n' +
+		'<title>Quick upload apps</title>\n' +
+		'</head>\n' +
+		'<body>\n' +
+		'	<p>Thank you, emails list was successfully actioned.</p>\n' +
+		'</body>\n' +
+		'</html>' 
+	);
 
 };
+
+//
+// ADDS emails in bulk
+//
+// Does not return anything... assume in res that operation went well
+//
+addBulk = async ( emails, topicId, now ) => {
+	let subscode,
+		confirmedEmails = [];
+	
+	emails.forEach((eml) => {
+		if ( eml.match( /.+\@.+\..+/ ) ) {
+			subscode = Math.floor(Math.random() * 999999) + "" + now.getMilliseconds();
+			confirmedEmails.push({email: eml, subscode: subscode, topicId: topicId});
+		}
+	});
+
+	// move into confirmed list
+	dbConn.collection( "subsConfirmed" ).insertMany(
+		confirmedEmails,
+		{
+			ordered: false
+		}
+	).catch( (e) => {
+		console.log( e );
+	});
+
+	// subs_logs entry - this can be async
+	dbConn.collection( "bulk_logs" ).insertOne(
+		{
+			task: "add",
+			createdAt: now,
+			topicId: topicId,
+			email: confirmedEmails
+		},
+	).catch( (e) => {
+		console.log( e );
+	});
+};
+
+//
+// REMOVES emails in bulk
+//
+// Does not return anything... assume in res that operation went well
+//
+//removeBulk = async ( emails, topic, now ) => {
+//
+//};
