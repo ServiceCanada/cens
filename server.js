@@ -86,7 +86,8 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {} ).then( ( mongoInstance ) 
 	 * Subscriber routes.
 	 */
 	app.post('/api/v0.1/subs/email/add',
-		passport.authenticate('basic', { session: false }),
+		// Need to do more testing
+		// passport.authenticate('basic', { session: false }),
 		subsController.addEmail);
 	//app.post('/api/v0.1/subs/email/confirm', subsController.confirmEmail); // TODO: need to handle data from "post"
 	//app.post('/api/v0.1/subs/email/remove', subsController.removeEmail); // TODO: need to handle data from "post"
