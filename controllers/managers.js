@@ -146,7 +146,7 @@ exports.serveBulkForm = ( req, res, next ) => {
 		'		</fieldset><br><br>\n' + 
 		'		<label for="emails">List of emails to action (one email address per line):<br>\n' +
 		'		<textarea id="emails" name="emails" rows="25" cols="50" required></textarea><br>\n' +
-		'		<input type="submit" value="Add">\n' +
+		'		<input type="submit" value="Submit">\n' +
 		'	</form>\n' +
 		'</body>\n' +
 		'</html>' 
@@ -161,7 +161,6 @@ exports.serveBulkForm = ( req, res, next ) => {
 //
 exports.actionBulk = async ( req, res, next ) => {
 
-	// Params: accessCode, topicId
 	const body = req.body,
 		action = body.action,
 		task = "bulk",
@@ -169,17 +168,18 @@ exports.actionBulk = async ( req, res, next ) => {
 		{ accessCode, topicId } = req.params;
 	
 	let emails = body.emails,
+		confirmedEmails = [],
 		granted;
 
 	// Validation of input
 	if( !emails ) {
 		res.send({
 			status: false,
-			message: 'No emails added'
+			message: 'No emails to action'
 		});
 		return;
 	}
-	
+
 	// Validate the accessCode and logs
 	await dbConn.collection( "topics_details" ).findOne(
 		{
@@ -213,36 +213,51 @@ exports.actionBulk = async ( req, res, next ) => {
 	}).catch( (e) => {
 		console.log( e );
 	});
-	
+
+	// Reject if access denied
 	if(!granted) {
 		res.json( { statusCode: 401, nal: 1 } );
 		return;
 	}
 
+	// Sanitize list of emails
 	emails = emails.replace(/\r/g, '').split('\n');
+	emails.forEach((eml) => {
+		if ( eml.match( /.+\@.+\..+/ ) ) {
+			confirmedEmails.push(eml);
+		}
+	});
 
-	switch( action ) {
-		case "remove":
-			//await removeBulk( emails, topicId, currDate );
-			break;
-		case "add":
-		default:
-			await addBulk( emails, topicId, currDate );
-			break;
+	// Action selected opeation, either remove or add in bulk
+	if( action === "remove" ) {
+		await removeBulk( confirmedEmails, topicId );
+	} else {
+		await addBulk( confirmedEmails, topicId, currDate );
 	}
+	
+	// Log an bulk_logs entry for bulk operation
+	dbConn.collection( "bulk_logs" ).insertOne(
+		{
+			task: action,
+			createdAt: currDate,
+			topicId: topicId,
+			email: confirmedEmails
+		},
+	).catch( (e) => {
+		console.log( e );
+	});
 
 	// Send response and return a page with a successful message
 	res.status( 200 ).send( '<!DOCTYPE html>\n' +
 		'<html lang="en">\n' +
 		'<head>\n' +
-		'<title>Quick upload apps</title>\n' +
+		'<title>Bulk emails action</title>\n' +
 		'</head>\n' +
 		'<body>\n' +
-		'	<p>Thank you, emails list was successfully actioned.</p>\n' +
+		'	<p>Thank you, ' + action + ' emails list operation was successful.</p>\n' +
 		'</body>\n' +
 		'</html>' 
 	);
-
 };
 
 //
@@ -250,35 +265,27 @@ exports.actionBulk = async ( req, res, next ) => {
 //
 // Does not return anything... assume in res that operation went well
 //
-addBulk = async ( emails, topicId, now ) => {
+addBulk = async ( emails, topicId, currDate ) => {
+
 	let subscode,
-		confirmedEmails = [];
-	
+		cookedEmails = [];
+
+	// Generates unique subscodes and cooks data for insertion
 	emails.forEach((eml) => {
-		if ( eml.match( /.+\@.+\..+/ ) ) {
-			subscode = Math.floor(Math.random() * 999999) + "" + now.getMilliseconds();
-			confirmedEmails.push({email: eml, subscode: subscode, topicId: topicId});
-		}
+		subscode = Math.floor(Math.random() * 999999) + "" + currDate.getMilliseconds();
+		cookedEmails.push({
+			email: eml, 
+			subscode: subscode, 
+			topicId: topicId
+		});
 	});
 
-	// move into confirmed list
+	// Add to confirmed list
 	dbConn.collection( "subsConfirmed" ).insertMany(
-		confirmedEmails,
+		cookedEmails,
 		{
 			ordered: false
 		}
-	).catch( (e) => {
-		console.log( e );
-	});
-
-	// subs_logs entry - this can be async
-	dbConn.collection( "bulk_logs" ).insertOne(
-		{
-			task: "add",
-			createdAt: now,
-			topicId: topicId,
-			email: confirmedEmails
-		},
 	).catch( (e) => {
 		console.log( e );
 	});
@@ -289,6 +296,15 @@ addBulk = async ( emails, topicId, now ) => {
 //
 // Does not return anything... assume in res that operation went well
 //
-//removeBulk = async ( emails, topic, now ) => {
-//
-//};
+removeBulk = async ( emails, topicId ) => {
+
+	// Remove from confirmed list
+	dbConn.collection( "subsConfirmed" ).removeMany({ 
+		email: { 
+			$in:  emails
+		}, 
+		topicId: topicId
+	}).catch( (e) => {
+		console.log( e );
+	});
+};
