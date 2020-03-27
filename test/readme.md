@@ -7,7 +7,7 @@ Brief list of what to create test for
 
 * Subscribe to a topic
 	- source: restFull API
-	- db: email saved in topic
+	- db: email added in exist subs collection
 	- db: new entry in subsUnconfirmed
 
 * Subscribe to a topic - invalid email or undefined topic id
@@ -66,6 +66,7 @@ Brief list of what to create test for
 	- source: Email link
 	- db: logged
 	- db: removed from Confirmed subscriber
+	- db: added a record in unsub collection
 
 	
 * Notify Failling 
@@ -102,7 +103,6 @@ Create a topic
 ```
 db.topics.insertOne( {
     _id: "test2",
-    subs: [],
     templateId: "<template id available in the template in Notify>",
     notifyKey: "<A valid Notify API key>",
     confirmURL: "https://canada.ca/en.html",

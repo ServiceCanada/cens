@@ -32,11 +32,17 @@ Server will run at `0.0.0.0:8080` by default.
 `user` User name to access at the service. Default: none, it must be set
 `password` Password to access at the service. Default: none, it must be set
 
+`topicCacheLimit`  Cache limit of number topic kept in memory. Default: `50`
+`notifyCacheLimit` Cache limit of number Notify client kept in memory. Default: `40`
+
+
+`flushAccessCode` Private code to allow to flush the cache. Default: undefined
+`flushAccessCode2` Private second code to allow to flush the cache. Default: undefined
+
 ## Collections
 
 topics
 	_id: topicId
-	subs: Array of <email>
 	templateId: Notify template id
 	notifyKey: Notify Key
 	confirmURL: Confirmation URL
@@ -53,6 +59,10 @@ topics_details
 	langAtl: Alternative language equivalent at this topic
 	retrieving: Array of <managersAccess>
 
+subsExist
+	e: email
+	t: topicId
+	
 subsUnconfirmed
 	email
 	subscode
@@ -68,7 +78,11 @@ subsConfirmed
 	email
 	subscode
 	topicId
-	
+
+subsUnsubs
+	c: createdAt (ttl of 30 days)
+	e: email
+	t: topicID
 
 subs_logs
 	_id: email or phone
@@ -99,10 +113,6 @@ managersAccess
 ## Indexes
 
 ```
-db.collection('topics').createIndex(
-	{ _id: 1, subs: 1 }
-);
-
 db.collection('topics_details').createIndex(
 	{ _id: 1, accessCode: 1 }
 );
@@ -110,7 +120,7 @@ db.collection('topics_details').createIndex(
 
 db.collection('subsUnconfirmed').createIndexes( [
 	{ email: 1, subscode: 1 },
-	{ email: 1, notBefore: 1 }
+	{ topicId: 1, email: 1, notBefore: 1 }
 ]);
 
 
@@ -122,4 +132,17 @@ db.subsConfirmed.createIndex(
 	{ topicId: 1, email: 1 },
 	{ unique: true }
 );
+
+
+db.subsExist.createIndex(
+	{ e: 1, t: 1 },
+	{ unique: true }
+);
+
+
+db.subsUnsubs.createIndex(
+	{ c: 1 },
+	{ expireAfterSeconds: 2952000 }
+);
+
 ```

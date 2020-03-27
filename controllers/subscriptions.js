@@ -10,7 +10,8 @@ const NotifyClient = require('notifications-node-client').NotifyClient; // https
 
 const dbConn = module.parent.exports.dbConn;
 
-const notifyCached = [];
+let notifyCached = [],
+	notifyCachedIndexes = [];
 
 const processEnv = process.env,
 	_errorPage = processEnv.errorPage || "https://canada.ca",
@@ -19,9 +20,15 @@ const processEnv = process.env,
 	_sErrorsJSO = processEnv.sErrorsJSO ||  { statusCode: 500, err: 1 },
 	_notifyEndPoint = processEnv.notifyEndPoint ||  "https://api.notification.alpha.canada.ca",
 	_confirmBaseURL = processEnv.confirmBaseURL ||  "https://apps.canada.ca/x-notify/subs/confirm/",
-	nbMinutesBF = processEnv.notSendBefore || 25; // Default of 25 minutes.
+	nbMinutesBF = processEnv.notSendBefore || 25, // Default of 25 minutes.
+	_topicCacheLimit = processEnv.topicCacheLimit || 50,
+	_notifyCacheLimit = processEnv.notifyCacheLimit || 40,
+	_flushAccessCode = processEnv.flushAccessCode,
+	_flushAccessCode2 = processEnv.flushAccessCode2;
 
-
+let topicCached = [],
+	topicCachedIndexes = [];
+	
 //
 // Add email to the newSubscriberEmail
 //
@@ -41,72 +48,58 @@ exports.addEmail = async ( req, res, next ) => {
 		return;
 	}
 	
-	// Select Topic where email $nin "subs"
-	const colTopic = dbConn.collection( "topics" );
+	// Get the topic
+	const topic = await getTopic( topicId );
 	
 	try {
-		const topic = await colTopic.findOne( 
-			{ _id: topicId, subs: { $nin: [ email ] } },
-			{ projection: {
-					_id: 0,
-					templateId: 1,
-					notifyKey: 1,
-					confirmURL: 1
-				} 
-			} ); // fyi - return null when there is no result.
-
-		// If email found, try to resend
-		if (! topic ) {
-
-			return resendEmailNotify( email, topicId, currDate )
-					.then( () => { 
-						res.json( _successJSO );
-					} )
-					.catch( ( e ) => {
-						// answer a negative JSON response + reason code
-						console.log( e );
-						res.json( _sErrorsJSO );
-					} );
+		if ( !topic ) {
+			res.json( _sErrorsJSO );
+			return true;
 		}
-
-		// Generate an simple Unique Code
-		const confirmCode = Math.floor(Math.random() * 999999) + "" + currDate.getMilliseconds(),
-			tId = topic.templateId,
-			nKey = topic.notifyKey;
 		
-		// Insert in subsToConfirm
-		await dbConn.collection( "subsUnconfirmed" ).insertOne( {
-			email: email,
-			subscode: confirmCode,
-			topicId: topicId,
-			notBefore: currDate.setMinutes( currDate.getMinutes() + nbMinutesBF ),
-			createAt: currDate,
-			tId: tId,
-			nKey: nKey,
-			cURL: topic.confirmURL
-		});
-		
-		// Update - Add to topic subs array
-		await colTopic.updateOne( 
-			{ _id: topicId },
+		// Check if the email is in the "SubsExist"
+		await dbConn.collection( "subsExist" ).insertOne( 
 			{
-				$push: {
-					subs: email
-				}
+				e: email,
+				t: topicId
+			}).then( () => {
+
+				// The email is not subscribed for that topic
+				// Generate an simple Unique Code
+				const confirmCode = Math.floor(Math.random() * 999999) + "" + currDate.getMilliseconds(),
+					tId = topic.templateId,
+					nKey = topic.notifyKey;
+				
+				// Insert in subsToConfirm
+				dbConn.collection( "subsUnconfirmed" ).insertOne( {
+					email: email,
+					subscode: confirmCode,
+					topicId: topicId,
+					notBefore: currDate.setMinutes( currDate.getMinutes() + nbMinutesBF ),
+					createAt: currDate,
+					tId: tId,
+					nKey: nKey,
+					cURL: topic.confirmURL
+				});
+
+				// Send confirm email - async
+				sendNotifyConfirmEmail( email, confirmCode, tId, nKey );
+				
+				res.json( _successJSO );
+			}).catch( () => {
+			
+				// The email was either subscribed-pending or subscribed confirmed
+				resendEmailNotify( email, topicId, currDate );
+
+				res.json( _successJSO );
 			});
 
-		// Send confirm email
-		sendNotifyConfirmEmail( email, confirmCode, tId, nKey );
-		
-		res.json( _successJSO );
-	
 	} catch ( e ) { 
-	
-		// The query has not ran
-		console.log( e );
-		
+
+		// Topic requested don't exist
 		res.json( _sErrorsJSO );
 	}
+
 
 };
 
@@ -191,9 +184,18 @@ exports.removeEmail = ( req, res, next ) => {
 	// findOneAndDeleted in subsConfirmedEmail document
 	dbConn.collection( "subsConfirmed" )
 		.findOneAndDelete( { email: email, subscode: subscode } )
-		.then( ( docSubs ) => {
+		.then( async ( docSubs ) => {
+			
 			
 			const topicId = docSubs.value.topicId;
+			const topic = await getTopic( topicId );
+
+			if ( !topic ) {
+				res.redirect( _errorPage );
+				return true;
+			}
+			
+			const unsubLink =  topic.unsubURL;
 			
 			// subs_logs entry - this can be async
 			dbConn.collection( "subs_logs" ).updateOne( 
@@ -214,23 +216,27 @@ exports.removeEmail = ( req, res, next ) => {
 				console.log( e );
 			});
 			
-			// update topics
-			dbConn.collection( "topics" ).findOneAndUpdate( 
-				{ _id: topicId },
+			// Create entry in unsubs
+			dbConn.collection( "subsUnsubs" ).insertOne( 
+			{
+				c: currDate,
+				e: email,
+				t: topicId
+			});
+			
+			// Remove from subsExits
+			await dbConn.collection( "subsExist" ).findOneAndDelete( 
 				{
-					$pull: {
-						subs: email
-					}
-				},
-				{
-					projection: { unsubURL: 1 }
-				}).then( ( docTp ) => {
+					e:email,
+					t: topicId
+				}).then( ( ) => {
 					
 					// Redirect to Generic page to confirm the email is removed
-					res.redirect( docTp.value.unsubURL );
+					res.redirect( unsubLink );
 
 				}).catch( ( e ) => {
 					console.log( e );
+					res.redirect( _errorPage );
 				});
 			
 		} ).catch( () => {
@@ -248,6 +254,34 @@ exports.getAll = (confirmCode, email, phone) => {
 
 
 //
+// Flush the topic and notify cache
+//
+// @return; an HTML blob
+//
+exports.flushCache = ( req, res, next ) => {
+	
+	const { accessCode, topicId } = req.params;
+	
+	if ( accessCode !== _flushAccessCode || topicId !== _flushAccessCode2 ||
+		!_flushAccessCode || !_flushAccessCode2 ) {
+		
+		res.json( _sErrorsJSO );
+	}
+	
+	// Flush topic
+	topicCachedIndexes = [];
+	topicCached = [];
+	
+	// Flush notify client
+	notifyCachedIndexes = [];
+	notifyCached = [];
+	
+	// Return success
+	res.json( _successJSO );
+
+};
+
+//
 // Resend email notify
 //
 resendEmailNotify = ( email, topicId, currDate ) => {
@@ -255,7 +289,7 @@ resendEmailNotify = ( email, topicId, currDate ) => {
 	// Find email in 
 	return dbConn.collection( "subsUnconfirmed" )
 		.findOneAndUpdate( 
-			{ email: email, notBefore: { $lt: currDate.getTime() } },
+			{ topicId: topicId, email: email, notBefore: { $lt: currDate.getTime() } },
 			{
 				$set: {
 					notBefore: currDate.setMinutes( currDate.getMinutes() + nbMinutesBF )
@@ -311,11 +345,19 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 	// There is 1 personalisation, the confirm links
 	// /subs/confirm/:subscode/:email
 
-	let notifyClient = notifyCached[ templateId ];
+	let notifyClient = notifyCached[ NotifyKey ];
+
 	
 	if ( !notifyClient ) {
 		notifyClient = new NotifyClient( _notifyEndPoint, NotifyKey );
-		notifyCached[ templateId ] = notifyClient;
+		notifyCached[ NotifyKey ] = notifyClient;
+		notifyCachedIndexes.push( NotifyKey );
+		
+		// Limit the cache to the last x instance of Notify
+		if ( notifyCachedIndexes.length > _notifyCacheLimit ) {
+			delete notifyCached[ notifyCachedIndexes.shift() ];
+		}
+
 	}
 	
 	
@@ -356,7 +398,44 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 		});
 }
 
+//
+// Get topic info
+//
 
+// Get the topic
+getTopic = ( topicId ) => {
+
+	let topic = topicCached[ topicId ];
+	
+	if ( !topic ) {
+		
+		topic = dbConn.collection( "topics" ).findOne( 
+			{ _id: topicId },
+			{ projection: {
+					_id: 1,
+					templateId: 1,
+					notifyKey: 1,
+					confirmURL: 1,
+					unsubURL: 1
+				} 
+			} ).catch( (e) => {
+				console.log( e );
+				return false;
+			});
+
+		topicCached[ topicId ] = topic;
+		topicCachedIndexes.push( topicId );
+		
+		// Limit the cache to the last x topics
+		if ( topicCachedIndexes.length > _topicCacheLimit ) {
+			delete topicCached[ topicCachedIndexes.shift() ];
+		}
+	
+	}
+	
+	return topic;
+		
+}
 
 
 
