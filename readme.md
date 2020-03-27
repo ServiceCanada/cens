@@ -20,14 +20,13 @@ For each topic you need:
 
 ## Topic naming convention
 
-<2-3 letter group name abbreviation>-<short topic name><2 letter language>
+`{2-3 letter group name abbreviation}-{short topic name}{2 letter language}`
 
 ### database command sample
 
 ```
 db.topics.insertOne( {
     _id: "test2",
-    subs: [],
     templateId: "<template id available in the template in Notify>",
     notifyKey: "<A valid Notify API key>",
     confirmURL: "https://canada.ca/en.html",
@@ -64,6 +63,11 @@ You need to:
 * Ask the client to send us a Live Notify API Key via an encrypted communication
 * Replace the Notify API key
 
+### Updating an existing topic
+
+1. Run the appropriate MongoDB query
+2. Flush the cache: /api/v0.1/t-manager/{Private access code 1}/{Private access code 2}/flush-cache
+
 ### Topic
 
 A topic could be compared to a mailing list.
@@ -71,10 +75,6 @@ A topic could be compared to a mailing list.
 `_id`
 
 Raw string identifier for a topic. Could be a keyword.
-
-`subs`
-
-Array of strings which are emails subscribed to the list. Emails part of that list include confirmed and unconfirmed emails.
 
 **Updates when:** A user fills out the form to subscribe to a topic.
 

@@ -114,7 +114,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {} ).then( ( mongoInstance ) 
 	 * Admin routes.
 	 */
 	// app.get('/subs/remove_unconfirm/:subscode/:email', subsController.removeUnconfirmEmail);
-
+	app.get('/api/v0.1/t-manager/:accessCode/:topicId/flush-cache', subsController.flushCache);
 
 	/**
 	 * Error Handler.
