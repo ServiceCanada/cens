@@ -113,12 +113,11 @@ managersAccess
 ## Indexes
 
 ```
-db.collection('topics_details').createIndex(
+db.topics_details.createIndex(
 	{ _id: 1, accessCode: 1 }
-);
+)
 
-
-db.collection('subsUnconfirmed').createIndexes( [
+db.subsUnconfirmed.createIndexes( [
 	{ email: 1, subscode: 1 },
 	{ topicId: 1, email: 1, notBefore: 1 }
 ]);
