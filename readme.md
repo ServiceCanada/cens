@@ -4,6 +4,9 @@
 
 [Tests](https://github.com/ServiceCanada/x-notify/tree/master/test)
 
+## Load tests
+
+Run bash script "load-run.sh" for load testing. More instructions in the file.
 
 ## Create topic
 
