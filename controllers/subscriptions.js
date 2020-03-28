@@ -14,13 +14,15 @@ let notifyCached = [],
 	notifyCachedIndexes = [];
 
 const processEnv = process.env,
+	_devLog = !!!processEnv.prodNoLog,
 	_errorPage = processEnv.errorPage || "https://canada.ca",
 	_successJSO = processEnv.successJSO || { statusCode: 200, ok: 1 },
 	_cErrorsJSO = processEnv.cErrorsJSO ||  { statusCode: 400, bad: 1, msg: "Bad request" },
 	_sErrorsJSO = processEnv.sErrorsJSO ||  { statusCode: 500, err: 1 },
 	_notifyEndPoint = processEnv.notifyEndPoint ||  "https://api.notification.alpha.canada.ca",
 	_confirmBaseURL = processEnv.confirmBaseURL ||  "https://apps.canada.ca/x-notify/subs/confirm/",
-	nbMinutesBF = processEnv.notSendBefore || 25, // Default of 25 minutes.
+	_nbMinutesBF = processEnv.notSendBefore || 25, // Default of 25 minutes.
+	_bypassSubscode = processEnv.subscode,
 	_topicCacheLimit = processEnv.topicCacheLimit || 50,
 	_notifyCacheLimit = processEnv.notifyCacheLimit || 40,
 	_flushAccessCode = processEnv.flushAccessCode,
@@ -42,7 +44,6 @@ exports.addEmail = async ( req, res, next ) => {
 		currDate = new Date();
 	
 	// Validate if email is the good format (something@something.tld)
-	
 	if ( !email.match( /.+\@.+\..+/ ) || !topicId ) {
 		res.json( _cErrorsJSO );
 		return;
@@ -66,7 +67,7 @@ exports.addEmail = async ( req, res, next ) => {
 
 				// The email is not subscribed for that topic
 				// Generate an simple Unique Code
-				const confirmCode = Math.floor(Math.random() * 999999) + "" + currDate.getMilliseconds(),
+				const confirmCode = _bypassSubscode || (Math.floor(Math.random() * 999999) + "" + currDate.getMilliseconds()),
 					tId = topic.templateId,
 					nKey = topic.notifyKey;
 				
@@ -75,7 +76,7 @@ exports.addEmail = async ( req, res, next ) => {
 					email: email,
 					subscode: confirmCode,
 					topicId: topicId,
-					notBefore: currDate.setMinutes( currDate.getMinutes() + nbMinutesBF ),
+					notBefore: currDate.setMinutes( currDate.getMinutes() + _nbMinutesBF ),
 					createAt: currDate,
 					tId: tId,
 					nKey: nKey,
@@ -132,7 +133,7 @@ exports.confirmEmail = ( req, res, next ) => {
 			});
 
 			// subs_logs entry - this can be async
-			dbConn.collection( "subs_logs" ).updateOne( 
+			_devLog && dbConn.collection( "subs_logs" ).updateOne( 
 				{ _id: email },
 				{
 					$setOnInsert: {
@@ -198,7 +199,7 @@ exports.removeEmail = ( req, res, next ) => {
 			const unsubLink =  topic.unsubURL;
 			
 			// subs_logs entry - this can be async
-			dbConn.collection( "subs_logs" ).updateOne( 
+			_devLog && dbConn.collection( "subs_logs" ).updateOne( 
 				{ _id: email },
 				{
 					$push: {
@@ -292,7 +293,7 @@ resendEmailNotify = ( email, topicId, currDate ) => {
 			{ topicId: topicId, email: email, notBefore: { $lt: currDate.getTime() } },
 			{
 				$set: {
-					notBefore: currDate.setMinutes( currDate.getMinutes() + nbMinutesBF )
+					notBefore: currDate.setMinutes( currDate.getMinutes() + _nbMinutesBF )
 				}
 			}
 		).then( async ( docSubs ) => {
@@ -300,7 +301,7 @@ resendEmailNotify = ( email, topicId, currDate ) => {
 			const docValue = docSubs.value;
 			
 			// subs_logs entry - this can be async
-			dbConn.collection( "subs_logs" ).updateOne( 
+			_devLog && dbConn.collection( "subs_logs" ).updateOne( 
 				{ _id: email },
 				{
 					$setOnInsert: {
@@ -322,7 +323,7 @@ resendEmailNotify = ( email, topicId, currDate ) => {
 			).catch( (e) => {
 				console.log( e );
 			});
-			
+
 			await docValue && sendNotifyConfirmEmail( email, docValue.subscode, docValue.tId, docValue.nKey );
 
 			
@@ -360,17 +361,16 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 
 	}
 	
-	
-	notifyClient.sendEmail( templateId, email, 
+	!_bypassSubscode && notifyClient.sendEmail( templateId, email, 
 		{
 			personalisation: { confirm_link: _confirmBaseURL + confirmCode + "/" + email },
 			reference: "x-notify_subs_confirm"
 		})
 		.catch( ( e ) => {
 			// Log the Notify errors
-			
+
 			const currDate = new Date();
-			
+
 			// notify_logs entry - this can be async
 			dbConn.collection( "notify_logs" ).updateOne( 
 				{ _id: templateId },
@@ -393,7 +393,7 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 			).catch( (e) => {
 				console.log( e );
 			});
-			
+
 			// TODO: evaluate if we need to trigger something else
 		});
 }

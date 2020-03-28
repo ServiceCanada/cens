@@ -22,7 +22,7 @@ Server will run at `0.0.0.0:8080` by default.
 `Host` URL of the host server. Default: `0.0.0.0`
 `Port` Port of the server. Default: `8080`
 `ServerStatusPath` Path to where we can see the server status. Default: `/admin/sys-status`
-`LOG_FORMAT` Log fomat for the logger. Default: `dev`
+`prodNoLog` Do not log transactions in subs_log collection if in prod mode. Default: `undefined`
 
 `NODE_ENV` Error logging for the running environment. Set to `prod` for production Default: `development`
 
@@ -32,9 +32,10 @@ Server will run at `0.0.0.0:8080` by default.
 `user` User name to access at the service. Default: none, it must be set
 `password` Password to access at the service. Default: none, it must be set
 
+`subscode` Bypasses subscode and Notify client if set. Default: `undefined`
+
 `topicCacheLimit`  Cache limit of number topic kept in memory. Default: `50`
 `notifyCacheLimit` Cache limit of number Notify client kept in memory. Default: `40`
-
 
 `flushAccessCode` Private code to allow to flush the cache. Default: undefined
 `flushAccessCode2` Private second code to allow to flush the cache. Default: undefined
