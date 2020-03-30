@@ -77,6 +77,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {} ).then( ( mongoInstance ) 
 	app.use(logger( processEnv.LOG_FORMAT || 'dev'));
 
 	app.use(express.json()); // for parsing application/json
+	app.use(express.urlencoded()); // for parsing application/x-www-form-urlencoded
 
 
 	app.disable('x-powered-by');

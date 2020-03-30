@@ -34,7 +34,7 @@ let topicCached = [],
 //
 // Add email to the newSubscriberEmail
 //
-// @return; a JSON response 
+// @return; a HTTP redirection 
 //
 exports.addEmail = async ( req, res, next ) => {
 	
@@ -43,19 +43,28 @@ exports.addEmail = async ( req, res, next ) => {
 		topicId = reqbody.tid,
 		currDate = new Date();
 	
-	// Validate if email is the good format (something@something.tld)
-	if ( !email.match( /.+\@.+\..+/ ) || !topicId ) {
-		res.json( _cErrorsJSO );
-		return;
+	if ( !reqbody ) {
+
+		// Not worth going further
+		res.redirect( _errorPage );
+		return true;
 	}
 	
 	// Get the topic
 	const topic = await getTopic( topicId );
 	
 	try {
+		
+		// No topic = no good
 		if ( !topic ) {
-			res.json( _sErrorsJSO );
+			res.redirect( topic.inputErrURL );
 			return true;
+		}
+		
+		// Validate if email is the good format (something@something.tld)
+		if ( !email.match( /.+\@.+\..+/ ) ) {
+			res.redirect( topic.inputErrURL );
+			return;
 		}
 		
 		// Check if the email is in the "SubsExist"
@@ -86,19 +95,19 @@ exports.addEmail = async ( req, res, next ) => {
 				// Send confirm email - async
 				sendNotifyConfirmEmail( email, confirmCode, tId, nKey );
 				
-				res.json( _successJSO );
+				res.redirect( topic.thankURL );
 			}).catch( () => {
 			
 				// The email was either subscribed-pending or subscribed confirmed
 				resendEmailNotify( email, topicId, currDate );
 
-				res.json( _successJSO );
+				res.json( topic.thankURL );
 			});
 
 	} catch ( e ) { 
 
 		// Topic requested don't exist
-		res.json( _sErrorsJSO );
+		res.redirect( topic.failURL );
 	}
 
 
