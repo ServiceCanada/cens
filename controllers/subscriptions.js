@@ -10,11 +10,10 @@ const NotifyClient = require('notifications-node-client').NotifyClient; // https
 
 const dbConn = module.parent.exports.dbConn;
 
-let notifyCached = [],
-	notifyCachedIndexes = [];
-
 const processEnv = process.env,
 	_devLog = !!!processEnv.prodNoLog,
+	_keySalt = processEnv.keySalt || 5417,
+	_validHosts = processEnv.validHosts || ["localhost:8080"],
 	_errorPage = processEnv.errorPage || "https://canada.ca",
 	_successJSO = processEnv.successJSO || { statusCode: 200, ok: 1 },
 	_cErrorsJSO = processEnv.cErrorsJSO ||  { statusCode: 400, bad: 1, msg: "Bad request" },
@@ -28,9 +27,43 @@ const processEnv = process.env,
 	_flushAccessCode = processEnv.flushAccessCode,
 	_flushAccessCode2 = processEnv.flushAccessCode2;
 
-let topicCached = [],
-	topicCachedIndexes = [];
+let notifyCached = [],
+	notifyCachedIndexes = [],
+	topicCached = [],
+	topicCachedIndexes = [],
+	keyCached;
+
+//
+// Get or generate key
+//
+// @return; a JSON Object containing valid key 
+//
+exports.getKey = async ( req, res, next ) => {
 	
+	const currDate = new Date();
+	
+	// Check key
+	let key = keyCached,
+		currKey;
+	
+	if( key ) {
+		currKey = new Buffer(key, 'base64');
+		currKey = currKey.toString('ascii');
+		keyDate = new Date(currKey.replace(_keySalt, ""));
+		
+		// A valid key lasts for 24 hours
+		if(keyDate + (24 * 60 * 60 * 1000) > currDate.getTime()) {
+			res.json( { authKey: key } );
+		}
+	}
+	currKey = new Buffer(_keySalt + "" + currDate.getTime());
+	currKey = currKey.toString('base64');
+	keyCached = currKey;
+
+	res.json( { authKey: currKey } );
+};
+
+
 //
 // Add email to the newSubscriberEmail
 //
@@ -41,11 +74,13 @@ exports.addEmail = async ( req, res, next ) => {
 	const reqbody = req.body,
 		email = reqbody.eml || "",
 		topicId = reqbody.tid,
-		currDate = new Date();
-	
-	if ( !reqbody ) {
+		key = reqbody.auke,
+		host = req.headers.host,
+		currDate = new Date(); 
 
-		// Not worth going further
+	// If no data, key not matching or referer not part of whitelist, then not worth going further
+	if ( !reqbody || key !== keyCached || _validHosts.indexOf(host) < 0) {
+
 		res.redirect( _errorPage );
 		return true;
 	}
@@ -101,7 +136,7 @@ exports.addEmail = async ( req, res, next ) => {
 				// The email was either subscribed-pending or subscribed confirmed
 				resendEmailNotify( email, topicId, currDate );
 
-				res.json( topic.thankURL );
+				res.redirect( topic.thankURL );
 			});
 
 	} catch ( e ) { 
@@ -425,7 +460,10 @@ getTopic = ( topicId ) => {
 					templateId: 1,
 					notifyKey: 1,
 					confirmURL: 1,
-					unsubURL: 1
+					unsubURL: 1,
+					thankURL: 1,
+					failURL: 1,
+					inputErrURL: 1
 				} 
 			} ).catch( (e) => {
 				console.log( e );
@@ -448,3 +486,30 @@ getTopic = ( topicId ) => {
 
 
 
+// Test add form
+//
+// prompt users with a form
+//
+// @return; an HTML blob
+//
+exports.testAdd = ( req, res, next ) => {
+
+	// You must run the getKey function if key is outdated or inexistent
+	const key = keyCached;
+
+	res.status( 200 ).send( '<!DOCTYPE html>\n' +
+		'<html lang="en">\n' +
+		'<head>\n' +
+		'<title>Bulk action emails</title>\n' +
+		'</head>\n' +
+		'<body>\n' +
+		'	<form action="/api/v0.1/subs/email/add" method="post">\n' +
+		'		<label>Email: <input type="email" name="eml" /></label><br>\n' +
+		'		<label>Topic: <input type="text" name="tid" /></label><br>\n' +
+		'		<input type="hidden" name="auke" value="' + key + '">\n' +
+		'		<input type="submit" value="Add">\n' +
+		'	</form>\n' +
+		'</body>\n' +
+		'</html>' 
+	);
+};

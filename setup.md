@@ -32,6 +32,7 @@ Server will run at `0.0.0.0:8080` by default.
 `user` User name to access at the service. Default: none, it must be set
 `password` Password to access at the service. Default: none, it must be set
 
+`keySalt` Add salt to key encoding. Default: `5417`
 `subscode` Bypasses subscode and Notify client if set. Default: `undefined`
 
 `topicCacheLimit`  Cache limit of number topic kept in memory. Default: `50`
