@@ -41,9 +41,8 @@ exports.getKey = async ( req, res, next ) => {
 	
 	let currDate = new Date.now();
 	currDate = currDate + (24 * 60 * 60 * 1000);
-	 
-	
-	const clefBuff = new Buffer(_keySalt + "" + currDate, 'base64');
+
+	const clefBuff = new Buffer(_keySalt + "" + currDate);
 	
 	res.json( { authKey: clefBuff.toString('base64') } );
 };
@@ -140,7 +139,7 @@ exports.addEmailPOST = async ( req, res, next ) => {
 		topicId = reqbody.tid,
 		key = reqbody.auke || "",
 		host = req.headers.host,
-		currDate = new Date,
+		currDate = new Date(),
 		currEpoc = Date.now(); 
 
 	let keyBuffer = new Buffer(key, 'base64'),
@@ -161,7 +160,7 @@ exports.addEmailPOST = async ( req, res, next ) => {
 	try {
 		
 		// No topic = no good
-		if ( !topic || !topic.inputErrURL || topic.thankURL || topic.failURL ) {
+		if ( !topic || !topic.inputErrURL || !topic.thankURL || !topic.failURL ) {
 			res.redirect( _errorPage );
 			return true;
 		}
@@ -571,7 +570,7 @@ exports.testAdd = ( req, res, next ) => {
 		'<title>Bulk action emails</title>\n' +
 		'</head>\n' +
 		'<body>\n' +
-		'	<form action="/api/v0.1/subs/email/add" method="post">\n' +
+		'	<form action="/subs/post" method="post">\n' +
 		'		<label>Email: <input type="email" name="eml" /></label><br>\n' +
 		'		<label>Topic: <input type="text" name="tid" /></label><br>\n' +
 		'		<input type="hidden" name="auke" value="' + key + '">\n' +
