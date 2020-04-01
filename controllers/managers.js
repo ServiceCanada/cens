@@ -96,7 +96,7 @@ exports.getTopicSubs = async ( req, res, next ) => {
 			console.log( e );
 		});
 
-		let csv = '"email address","unsub"\r\n'; // Need to change this for a stream.
+		let csv = '"email address","unsub_link"\r\n'; // Need to change this for a stream.
 
 		docs.toArray( ( err, docsItems ) => {
 
