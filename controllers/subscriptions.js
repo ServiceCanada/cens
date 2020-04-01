@@ -12,7 +12,7 @@ const dbConn = module.parent.exports.dbConn;
 
 const processEnv = process.env,
 	_devLog = !!!processEnv.prodNoLog,
-	_keySalt = processEnv.keySalt || 5417,
+	_keySalt = processEnv.keySalt || "5417",
 	_validHosts = processEnv.validHosts || ["localhost:8080"],
 	_errorPage = processEnv.errorPage || "https://canada.ca",
 	_successJSO = processEnv.successJSO || { statusCode: 200, ok: 1 },
@@ -33,19 +33,28 @@ let notifyCached = [],
 	topicCachedIndexes = [];
 
 //
-// Get or generate key
+// Get key
 //
-// @return; a JSON Object containing valid key 
+// @return; a JSON containing valid key 
 //
-exports.getKey = async ( req, res, next ) => {
+exports.getKey = ( req, res, next ) => {
 	
-	let currDate = new Date.now();
+	res.json( generateKey() );
+};
+
+//
+// Generate key
+//
+// @return; a JSO containing valid key 
+//
+generateKey = () => {
+	let currDate = Date.now();
 	currDate = currDate + (24 * 60 * 60 * 1000);
 
 	const clefBuff = new Buffer(_keySalt + "" + currDate);
-	
-	res.json( { authKey: clefBuff.toString('base64') } );
-};
+	keyK = clefBuff.toString('base64');
+	return { authKey: clefBuff.toString('base64') };
+}
 
 
 //
@@ -154,7 +163,7 @@ exports.addEmailPOST = async ( req, res, next ) => {
 	keyDecrypt = keyDecrypt.substring( _keySalt.length );
 		
 	// If no data, key not matching or referer not part of whitelist, then not worth going further
-	if ( !reqbody || _validHosts.indexOf(host) !== -1 || keyDecrypt > currEpoc ) {
+	if ( !reqbody || _validHosts.indexOf(host) === -1 || keyDecrypt < currEpoc ) {
 
 		console.log( "addEmailPOST: noauth" );
 		console.log( e );
@@ -169,8 +178,7 @@ exports.addEmailPOST = async ( req, res, next ) => {
 		
 		// No topic = no good
 		if ( !topic || !topic.inputErrURL || !topic.thankURL || !topic.failURL ) {
-		
-			console.log( "addEmailPOST: no topic" );
+      console.log( "addEmailPOST: no topic" );
 			console.log( e );
 			res.redirect( _errorPage );
 			return true;
@@ -593,7 +601,7 @@ getTopic = ( topicId ) => {
 exports.testAdd = ( req, res, next ) => {
 
 	// You must run the getKey function if key is outdated or inexistent
-	const key = keyCached;
+	const key = generateKey();
 
 	res.status( 200 ).send( '<!DOCTYPE html>\n' +
 		'<html lang="en">\n' +
@@ -604,7 +612,7 @@ exports.testAdd = ( req, res, next ) => {
 		'	<form action="/subs/post" method="post">\n' +
 		'		<label>Email: <input type="email" name="eml" /></label><br>\n' +
 		'		<label>Topic: <input type="text" name="tid" /></label><br>\n' +
-		'		<input type="hidden" name="auke" value="' + key + '">\n' +
+		'		<input type="hidden" name="auke" value="' + key.authKey + '">\n' +
 		'		<input type="submit" value="Add">\n' +
 		'	</form>\n' +
 		'</body>\n' +

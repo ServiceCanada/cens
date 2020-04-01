@@ -98,7 +98,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	
 	app.get('/subs/confirm/:subscode/:email', subsController.confirmEmail);
 	app.get('/subs/remove/:subscode/:email', subsController.removeEmail);
-	app.get('/subs/post',
+	app.post('/subs/post',
 		bodyParser.urlencoded({extended:false, limit: '10kb'}),
 		subsController.addEmailPOST);
 	// app.get('/api/v0.1/subs/email/getAll', subsController.getAll); // TODO: kept for later if we create a "subscription" management page.
