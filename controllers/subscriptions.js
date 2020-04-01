@@ -30,8 +30,7 @@ const processEnv = process.env,
 let notifyCached = [],
 	notifyCachedIndexes = [],
 	topicCached = [],
-	topicCachedIndexes = [],
-	keyCached;
+	topicCachedIndexes = [];
 
 //
 // Get or generate key
@@ -40,28 +39,93 @@ let notifyCached = [],
 //
 exports.getKey = async ( req, res, next ) => {
 	
-	const currDate = new Date();
+	let currDate = new Date.now();
+	currDate = currDate + (24 * 60 * 60 * 1000);
+	 
 	
-	// Check key
-	let key = keyCached,
-		currKey;
+	const clefBuff = new Buffer(_keySalt + "" + currDate, 'base64');
 	
-	if( key ) {
-		currKey = new Buffer(key, 'base64');
-		currKey = currKey.toString('ascii');
-		keyDate = new Date(currKey.replace(_keySalt, ""));
-		
-		// A valid key lasts for 24 hours
-		if(keyDate + (24 * 60 * 60 * 1000) > currDate.getTime()) {
-			res.json( { authKey: key } );
-		}
-	}
-	currKey = new Buffer(_keySalt + "" + currDate.getTime());
-	currKey = currKey.toString('base64');
-	keyCached = currKey;
-
-	res.json( { authKey: currKey } );
+	res.json( { authKey: clefBuff.toString('base64') } );
 };
+
+
+//
+// Add email to the newSubscriberEmail
+//
+// @return; a JSON response 
+//
+exports.addEmail = async ( req, res, next ) => {
+	
+	const reqbody = req.body,
+		email = reqbody.eml || "",
+		topicId = reqbody.tid,
+		currDate = new Date();
+
+	// Validate if email is the good format (something@something.tld)
+	if ( !email.match( /.+\@.+\..+/ ) || !topicId ) {
+		res.json( _cErrorsJSO );
+		return;
+	}
+	
+	// Get the topic
+	const topic = await getTopic( topicId );
+	
+	try {
+		
+		// No topic = no good
+		if ( !topic ) {
+			res.json( _sErrorsJSO );
+			return true;
+		}
+
+		// Check if the email is in the "SubsExist"
+		await dbConn.collection( "subsExist" ).insertOne( 
+			{
+				e: email,
+				t: topicId
+			}).then( () => {
+
+				// The email is not subscribed for that topic
+				// Generate an simple Unique Code
+				const confirmCode = _bypassSubscode || (Math.floor(Math.random() * 999999) + "" + currDate.getMilliseconds()),
+					tId = topic.templateId,
+					nKey = topic.notifyKey;
+				
+				// Insert in subsToConfirm
+				dbConn.collection( "subsUnconfirmed" ).insertOne( {
+					email: email,
+					subscode: confirmCode,
+					topicId: topicId,
+					notBefore: currDate.setMinutes( currDate.getMinutes() + _nbMinutesBF ),
+					createAt: currDate,
+					tId: tId,
+					nKey: nKey,
+					cURL: topic.confirmURL
+				});
+
+				// Send confirm email - async
+				sendNotifyConfirmEmail( email, confirmCode, tId, nKey );
+				
+				res.json( _successJSO );
+			}).catch( () => {
+			
+				// The email was either subscribed-pending or subscribed confirmed
+				resendEmailNotify( email, topicId, currDate );
+
+				res.json( _successJSO );
+			});
+
+	} catch ( e ) { 
+
+		// Topic requested don't exist
+		res.json( _sErrorsJSO );
+	}
+
+
+};
+
+
+
 
 
 //
@@ -69,17 +133,23 @@ exports.getKey = async ( req, res, next ) => {
 //
 // @return; a HTTP redirection 
 //
-exports.addEmail = async ( req, res, next ) => {
+exports.addEmailPOST = async ( req, res, next ) => {
 	
 	const reqbody = req.body,
 		email = reqbody.eml || "",
 		topicId = reqbody.tid,
-		key = reqbody.auke,
+		key = reqbody.auke || "",
 		host = req.headers.host,
-		currDate = new Date(); 
+		currDate = new Date,
+		currEpoc = Date.now(); 
 
+	let keyBuffer = new Buffer(key, 'base64'),
+		keyDecrypt = keyBuffer.toString('ascii');
+	
+	keyDecrypt = keyDecrypt.substring( _keySalt.length );
+		
 	// If no data, key not matching or referer not part of whitelist, then not worth going further
-	if ( !reqbody || key !== keyCached || _validHosts.indexOf(host) < 0) {
+	if ( !reqbody || _validHosts.indexOf(host) !== -1 || keyDecrypt > currEpoc ) {
 
 		res.redirect( _errorPage );
 		return true;
@@ -91,8 +161,8 @@ exports.addEmail = async ( req, res, next ) => {
 	try {
 		
 		// No topic = no good
-		if ( !topic ) {
-			res.redirect( topic.inputErrURL );
+		if ( !topic || !topic.inputErrURL || topic.thankURL || topic.failURL ) {
+			res.redirect( _errorPage );
 			return true;
 		}
 		
@@ -145,9 +215,7 @@ exports.addEmail = async ( req, res, next ) => {
 		res.redirect( topic.failURL );
 	}
 
-
 };
-
 
 //
 // Confirm subscription email

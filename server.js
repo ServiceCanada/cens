@@ -81,7 +81,6 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	app.use(logger( processEnv.LOG_FORMAT || 'dev'));
 
 	app.use(bodyParser.json()); // for parsing application/json
-	app.use(bodyParser.urlencoded({ extended: false })); // for parsing application/x-www-form-urlencoded
 
 	app.disable('x-powered-by');
 
@@ -89,18 +88,19 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	/**
 	 * Subscriber routes.
 	 */
-	app.get('/api/v0.1/subs/key', subsController.getKey);
+	app.get('/api/v0.1/subs/postkey', subsController.getKey);
 	app.post('/api/v0.1/subs/email/add',
-		bodyParser.urlencoded({extended:false, limit: '2kb'}),
 		// Need to do more testing
 		// passport.authenticate('basic', { session: false }),
 		subsController.addEmail);
-	app.get('/api/v0.1/subs/email/add/test', subsController.testAdd);
 	//app.post('/api/v0.1/subs/email/confirm', subsController.confirmEmail); // TODO: need to handle data from "post"
 	//app.post('/api/v0.1/subs/email/remove', subsController.removeEmail); // TODO: need to handle data from "post"
 	
 	app.get('/subs/confirm/:subscode/:email', subsController.confirmEmail);
 	app.get('/subs/remove/:subscode/:email', subsController.removeEmail);
+	app.get('/subs/post',
+		bodyParser.urlencoded({extended:false, limit: '10kb'}),
+		subsController.addEmailPOST);
 	// app.get('/api/v0.1/subs/email/getAll', subsController.getAll); // TODO: kept for later if we create a "subscription" management page.
 
 
@@ -115,6 +115,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	app.post('/api/v0.1/t-manager/:accessCode/:topicId/bulk/action',
 		bodyParser.urlencoded({extended:true, limit: '50mb'}),
 		managersController.actionBulk);
+	app.get('/api/v0.1/t-manager/:accessCode/:topicId/email/add/test', subsController.testAdd);
 
 	/**
 	 * Admin routes.
