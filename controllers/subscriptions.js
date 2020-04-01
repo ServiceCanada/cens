@@ -111,7 +111,7 @@ exports.addEmail = async ( req, res, next ) => {
 					tId: tId,
 					nKey: nKey,
 					cURL: topic.confirmURL
-				}) catch ( e ) { 
+				}).catch ( e ) { 
 					console.log( "addEmail: subsUnconfirmed" );
 					console.log( e );
 				}
@@ -213,7 +213,10 @@ exports.addEmailPOST = async ( req, res, next ) => {
 					tId: tId,
 					nKey: nKey,
 					cURL: topic.confirmURL
-				});
+				}).catch ( e ) { 
+					console.log( "addEmailPOST: subsUnconfirmed" );
+					console.log( e );
+				};
 
 				// Send confirm email - async
 				sendNotifyConfirmEmail( email, confirmCode, tId, nKey );
