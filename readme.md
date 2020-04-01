@@ -69,6 +69,38 @@ db.topics.insertOne( {
 })
 ```
 
+Same, but to update an existing topic
+
+```
+db.topics.updateOne( {
+		_id: "test"
+	},
+	{
+		$set: {
+			thankURL: "https://canada.ca/en.html",
+			inputErrURL: "https://canada.ca/en.html",
+			failURL: "https://canada.ca/en.html"
+		}
+	}
+);
+```
+
+To remove it
+```
+db.topics.updateOne( {
+		_id: "test"
+	},
+	{
+		$unset: {
+			thankURL: "",
+			inputErrURL: "",
+			failURL: ""
+		}
+	}
+);
+```
+
+
 ### Going live with a topic
 
 You need to:

@@ -166,7 +166,6 @@ exports.addEmailPOST = async ( req, res, next ) => {
 	if ( !reqbody || _validHosts.indexOf(host) === -1 || keyDecrypt < currEpoc ) {
 
 		console.log( "addEmailPOST: noauth" );
-		console.log( e );
 		res.redirect( _errorPage );
 		return true;
 	}
@@ -178,8 +177,7 @@ exports.addEmailPOST = async ( req, res, next ) => {
 		
 		// No topic = no good
 		if ( !topic || !topic.inputErrURL || !topic.thankURL || !topic.failURL ) {
-      console.log( "addEmailPOST: no topic" );
-			console.log( e );
+			console.log( "addEmailPOST: no topic" );
 			res.redirect( _errorPage );
 			return true;
 		}
@@ -517,36 +515,30 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 		.catch( ( e ) => {
 			// Log the Notify errors
 
-			const currDate = new Date();
+			const currDate = new Date(),
+				errDetails = e.error.errors[0];
 
 			// notify_logs entry - this can be async
-			dbConn.collection( "notify_logs" ).updateOne( 
-				{ _id: templateId },
+			dbConn.collection( "notify_logs" ).insertOne( 
 				{
-					$setOnInsert: {
-						_id: templateId,
-						createdAt: currDate
-					},
-					$push: {
-						errLogs: {
-							createdAt: currDate,
-							e: e
-						}
-					},
-					$currentDate: { 
-						lastUpdated: true
-					}
+					createdAt: currDate,
+					templateId: templateId,
+					e: errDetails.error,
+					msg: errDetails.message,
+					statusCode: e.error.status_code,
+					err: e.toString(),
+					code: confirmCode
 				},
 				{ upsert: true }
 			).catch( (e2) => {
-				console.log( "sendNotifyConfirmEmail: notify_logs" );
+				console.log( "sendNotifyConfirmEmail: notify_logs: " + confirmCode );
 				console.log( e2 );
+				console.log( e );
 			});
 
 			// TODO: evaluate if we need to trigger something else
 			
-			console.log( "sendNotifyConfirmEmail: sendEmail" );
-			console.log( e );
+			console.log( "sendNotifyConfirmEmail: sendEmail " + confirmCode );
 		});
 }
 
