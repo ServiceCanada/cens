@@ -131,6 +131,8 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 		app.use(errorHandler());
 	} else {
 		app.use((err, req, res, next) => {
+		
+			console.log( "app.use: Server Error" );
 			console.error(err);
 			res.status(500).send('Server Error');
 		});

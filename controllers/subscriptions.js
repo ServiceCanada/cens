@@ -62,6 +62,7 @@ exports.addEmail = async ( req, res, next ) => {
 
 	// Validate if email is the good format (something@something.tld)
 	if ( !email.match( /.+\@.+\..+/ ) || !topicId ) {
+		console.log( "addEmail: bad email: " + email );
 		res.json( _cErrorsJSO );
 		return;
 	}
@@ -73,6 +74,7 @@ exports.addEmail = async ( req, res, next ) => {
 		
 		// No topic = no good
 		if ( !topic ) {
+			console.log( "addEmail: no topic: " + topicId );
 			res.json( _sErrorsJSO );
 			return true;
 		}
@@ -100,22 +102,26 @@ exports.addEmail = async ( req, res, next ) => {
 					tId: tId,
 					nKey: nKey,
 					cURL: topic.confirmURL
-				});
+				}) catch ( e ) { 
+					console.log( "addEmail: subsUnconfirmed" );
+					console.log( e );
+				}
 
 				// Send confirm email - async
 				sendNotifyConfirmEmail( email, confirmCode, tId, nKey );
 				
 				res.json( _successJSO );
-			}).catch( () => {
+			}).catch( ( ) => {
 			
 				// The email was either subscribed-pending or subscribed confirmed
 				resendEmailNotify( email, topicId, currDate );
-
 				res.json( _successJSO );
 			});
 
 	} catch ( e ) { 
 
+		console.log( "addEmail" );
+		console.log( e );
 		// Topic requested don't exist
 		res.json( _sErrorsJSO );
 	}
@@ -150,6 +156,8 @@ exports.addEmailPOST = async ( req, res, next ) => {
 	// If no data, key not matching or referer not part of whitelist, then not worth going further
 	if ( !reqbody || _validHosts.indexOf(host) !== -1 || keyDecrypt > currEpoc ) {
 
+		console.log( "addEmailPOST: noauth" );
+		console.log( e );
 		res.redirect( _errorPage );
 		return true;
 	}
@@ -161,6 +169,9 @@ exports.addEmailPOST = async ( req, res, next ) => {
 		
 		// No topic = no good
 		if ( !topic || !topic.inputErrURL || !topic.thankURL || !topic.failURL ) {
+		
+			console.log( "addEmailPOST: no topic" );
+			console.log( e );
 			res.redirect( _errorPage );
 			return true;
 		}
@@ -210,7 +221,9 @@ exports.addEmailPOST = async ( req, res, next ) => {
 
 	} catch ( e ) { 
 
-		// Topic requested don't exist
+		console.log( "addEmailPOST" );
+		console.log( e );
+
 		res.redirect( topic.failURL );
 	}
 
@@ -269,6 +282,7 @@ exports.confirmEmail = ( req, res, next ) => {
 				},
 				{ upsert: true }
 			).catch( (e) => {
+				console.log( "confirmEmail: subs_logs" );
 				console.log( e );
 			});
 			
@@ -276,7 +290,9 @@ exports.confirmEmail = ( req, res, next ) => {
 			res.redirect( docValue.cURL );
 
 		})
-		.catch( () => {
+		.catch( ( e ) => {
+			console.log( "confirmEmail: subsUnconfirmed" );
+			console.log( e );
 			res.redirect( _errorPage );
 		});
 };
@@ -303,6 +319,8 @@ exports.removeEmail = ( req, res, next ) => {
 			const topic = await getTopic( topicId );
 
 			if ( !topic ) {
+				console.log( "removeEmail: notopic" );
+				console.log( e );
 				res.redirect( _errorPage );
 				return true;
 			}
@@ -325,6 +343,7 @@ exports.removeEmail = ( req, res, next ) => {
 					}
 				}
 			).catch( (e) => {
+				console.log( "removeEmail: subs_logs" );
 				console.log( e );
 			});
 			
@@ -347,11 +366,14 @@ exports.removeEmail = ( req, res, next ) => {
 					res.redirect( unsubLink );
 
 				}).catch( ( e ) => {
+					console.log( "removeEmail: subsExist" );
 					console.log( e );
 					res.redirect( _errorPage );
 				});
 			
-		} ).catch( () => {
+		} ).catch( ( e ) => {
+			console.log( "removeEmail: subsConfirmed" );
+			console.log( e );
 			res.redirect( _errorPage );
 		});
 };
@@ -377,6 +399,7 @@ exports.flushCache = ( req, res, next ) => {
 	if ( accessCode !== _flushAccessCode || topicId !== _flushAccessCode2 ||
 		!_flushAccessCode || !_flushAccessCode2 ) {
 		
+		console.log( "flushCache: noauth" );
 		res.json( _sErrorsJSO );
 	}
 	
@@ -389,6 +412,7 @@ exports.flushCache = ( req, res, next ) => {
 	notifyCached = [];
 	
 	// Return success
+	console.log( "flushCache: success" );
 	res.json( _successJSO );
 
 };
@@ -432,6 +456,7 @@ resendEmailNotify = ( email, topicId, currDate ) => {
 				},
 				{ upsert: true }
 			).catch( (e) => {
+				console.log( "resendEmailNotify: subs_logs" );
 				console.log( e );
 			});
 
@@ -440,6 +465,7 @@ resendEmailNotify = ( email, topicId, currDate ) => {
 			
 		})
 		.catch( (e) => {
+			console.log( "resendEmailNotify: subsUnconfirmed" );
 			console.log( e );
 		});
 
@@ -501,11 +527,15 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 					}
 				},
 				{ upsert: true }
-			).catch( (e) => {
-				console.log( e );
+			).catch( (e2) => {
+				console.log( "sendNotifyConfirmEmail: notify_logs" );
+				console.log( e2 );
 			});
 
 			// TODO: evaluate if we need to trigger something else
+			
+			console.log( "sendNotifyConfirmEmail: sendEmail" );
+			console.log( e );
 		});
 }
 
@@ -533,6 +563,7 @@ getTopic = ( topicId ) => {
 					inputErrURL: 1
 				} 
 			} ).catch( (e) => {
+				console.log( "getTopic" );
 				console.log( e );
 				return false;
 			});
