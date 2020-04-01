@@ -10,11 +10,10 @@ const NotifyClient = require('notifications-node-client').NotifyClient; // https
 
 const dbConn = module.parent.exports.dbConn;
 
-let notifyCached = [],
-	notifyCachedIndexes = [];
-
 const processEnv = process.env,
 	_devLog = !!!processEnv.prodNoLog,
+	_keySalt = processEnv.keySalt || 5417,
+	_validHosts = processEnv.validHosts || ["localhost:8080"],
 	_errorPage = processEnv.errorPage || "https://canada.ca",
 	_successJSO = processEnv.successJSO || { statusCode: 200, ok: 1 },
 	_cErrorsJSO = processEnv.cErrorsJSO ||  { statusCode: 400, bad: 1, msg: "Bad request" },
@@ -28,9 +27,27 @@ const processEnv = process.env,
 	_flushAccessCode = processEnv.flushAccessCode,
 	_flushAccessCode2 = processEnv.flushAccessCode2;
 
-let topicCached = [],
+let notifyCached = [],
+	notifyCachedIndexes = [],
+	topicCached = [],
 	topicCachedIndexes = [];
+
+//
+// Get or generate key
+//
+// @return; a JSON Object containing valid key 
+//
+exports.getKey = async ( req, res, next ) => {
 	
+	let currDate = new Date.now();
+	currDate = currDate + (24 * 60 * 60 * 1000);
+
+	const clefBuff = new Buffer(_keySalt + "" + currDate);
+	
+	res.json( { authKey: clefBuff.toString('base64') } );
+};
+
+
 //
 // Add email to the newSubscriberEmail
 //
@@ -42,7 +59,7 @@ exports.addEmail = async ( req, res, next ) => {
 		email = reqbody.eml || "",
 		topicId = reqbody.tid,
 		currDate = new Date();
-	
+
 	// Validate if email is the good format (something@something.tld)
 	if ( !email.match( /.+\@.+\..+/ ) || !topicId ) {
 		res.json( _cErrorsJSO );
@@ -53,11 +70,13 @@ exports.addEmail = async ( req, res, next ) => {
 	const topic = await getTopic( topicId );
 	
 	try {
+		
+		// No topic = no good
 		if ( !topic ) {
 			res.json( _sErrorsJSO );
 			return true;
 		}
-		
+
 		// Check if the email is in the "SubsExist"
 		await dbConn.collection( "subsExist" ).insertOne( 
 			{
@@ -104,6 +123,98 @@ exports.addEmail = async ( req, res, next ) => {
 
 };
 
+
+
+
+
+//
+// Add email to the newSubscriberEmail
+//
+// @return; a HTTP redirection 
+//
+exports.addEmailPOST = async ( req, res, next ) => {
+	
+	const reqbody = req.body,
+		email = reqbody.eml || "",
+		topicId = reqbody.tid,
+		key = reqbody.auke || "",
+		host = req.headers.host,
+		currDate = new Date(),
+		currEpoc = Date.now(); 
+
+	let keyBuffer = new Buffer(key, 'base64'),
+		keyDecrypt = keyBuffer.toString('ascii');
+	
+	keyDecrypt = keyDecrypt.substring( _keySalt.length );
+		
+	// If no data, key not matching or referer not part of whitelist, then not worth going further
+	if ( !reqbody || _validHosts.indexOf(host) !== -1 || keyDecrypt > currEpoc ) {
+
+		res.redirect( _errorPage );
+		return true;
+	}
+	
+	// Get the topic
+	const topic = await getTopic( topicId );
+	
+	try {
+		
+		// No topic = no good
+		if ( !topic || !topic.inputErrURL || !topic.thankURL || !topic.failURL ) {
+			res.redirect( _errorPage );
+			return true;
+		}
+		
+		// Validate if email is the good format (something@something.tld)
+		if ( !email.match( /.+\@.+\..+/ ) ) {
+			res.redirect( topic.inputErrURL );
+			return;
+		}
+		
+		// Check if the email is in the "SubsExist"
+		await dbConn.collection( "subsExist" ).insertOne( 
+			{
+				e: email,
+				t: topicId
+			}).then( () => {
+
+				// The email is not subscribed for that topic
+				// Generate an simple Unique Code
+				const confirmCode = _bypassSubscode || (Math.floor(Math.random() * 999999) + "" + currDate.getMilliseconds()),
+					tId = topic.templateId,
+					nKey = topic.notifyKey;
+				
+				// Insert in subsToConfirm
+				dbConn.collection( "subsUnconfirmed" ).insertOne( {
+					email: email,
+					subscode: confirmCode,
+					topicId: topicId,
+					notBefore: currDate.setMinutes( currDate.getMinutes() + _nbMinutesBF ),
+					createAt: currDate,
+					tId: tId,
+					nKey: nKey,
+					cURL: topic.confirmURL
+				});
+
+				// Send confirm email - async
+				sendNotifyConfirmEmail( email, confirmCode, tId, nKey );
+				
+				res.redirect( topic.thankURL );
+			}).catch( () => {
+			
+				// The email was either subscribed-pending or subscribed confirmed
+				resendEmailNotify( email, topicId, currDate );
+
+				res.redirect( topic.thankURL );
+			});
+
+	} catch ( e ) { 
+
+		// Topic requested don't exist
+		res.redirect( topic.failURL );
+	}
+
+};
 
 //
 // Confirm subscription email
@@ -416,7 +527,10 @@ getTopic = ( topicId ) => {
 					templateId: 1,
 					notifyKey: 1,
 					confirmURL: 1,
-					unsubURL: 1
+					unsubURL: 1,
+					thankURL: 1,
+					failURL: 1,
+					inputErrURL: 1
 				} 
 			} ).catch( (e) => {
 				console.log( e );
@@ -439,3 +553,30 @@ getTopic = ( topicId ) => {
 
 
 
+// Test add form
+//
+// prompt users with a form
+//
+// @return; an HTML blob
+//
+exports.testAdd = ( req, res, next ) => {
+
+	// You must run the getKey function if key is outdated or inexistent
+	const key = keyCached;
+
+	res.status( 200 ).send( '<!DOCTYPE html>\n' +
+		'<html lang="en">\n' +
+		'<head>\n' +
+		'<title>Bulk action emails</title>\n' +
+		'</head>\n' +
+		'<body>\n' +
+		'	<form action="/subs/post" method="post">\n' +
+		'		<label>Email: <input type="email" name="eml" /></label><br>\n' +
+		'		<label>Topic: <input type="text" name="tid" /></label><br>\n' +
+		'		<input type="hidden" name="auke" value="' + key + '">\n' +
+		'		<input type="submit" value="Add">\n' +
+		'	</form>\n' +
+		'</body>\n' +
+		'</html>' 
+	);
+};
