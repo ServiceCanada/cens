@@ -52,6 +52,23 @@ db.topics_details.insertOne( {
 })
 ```
 
+### (Optional) Create a topic for an app handling POST volume
+
+You need to add the last three URLs for redirection
+
+```
+db.topics.insertOne( {
+    _id: "test2",
+    templateId: "<template id available in the template in Notify>",
+    notifyKey: "<A valid Notify API key>",
+    confirmURL: "https://canada.ca/en.html",
+    unsubURL: "https://canada.ca/en.html",
+	thankURL: "https://canada.ca/en.html",
+    inputErrURL: "https://canada.ca/en.html",
+    failURL: "https://canada.ca/en.html"
+})
+```
+
 ### Going live with a topic
 
 You need to:
@@ -97,6 +114,21 @@ String of the URL to the page to which user is redirected when they confirmed th
 
 String of the URL to the page to which user is redirected when they unsubscribe from their subscription by clicking the unsubscribe link in an email.
 
+#### (Optional) Create a topic for an app handling POST volume
+
+You need to add the last three URLs for redirection
+
+`thankURL`
+
+String of the URL to the page to which user is redirected when they subscribe successfully with the POST activated
+
+`inputErrURL`
+
+String of the URL to the page to which user is redirected when they fill out the form with input errors with the POST activated
+
+`failURL`
+
+String of the URL to the page to which user is redirected when the subscription fails on the server side with the POST activated
 
 ### Topics Details
 
