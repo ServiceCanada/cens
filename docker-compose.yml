@@ -1,0 +1,27 @@
+version: '3'
+services:
+  mongo:
+    image: mongo:3.6
+    networks:
+     - x-notify-net
+  x-notify:
+    build: ./
+    ports:
+     - "8080:8080"
+    restart: on-failure
+    container_name: x-notify
+    environment:
+     - MONGODB_URI=mongodb://mongo:27017/test
+     - NODE_ENV=development
+    links:
+     - mongo
+    depends_on:
+     - mongo
+    volumes:
+     - .:/x-notify
+     - /node_modules
+    networks:
+     - x-notify-net
+networks:
+  x-notify-net:
+    driver: bridge
