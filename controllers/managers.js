@@ -7,9 +7,11 @@
  ===========================*/
 
 const dbConn = module.parent.exports.dbConn;
+const ObjectId = require('mongodb').ObjectId;
 
 
-const _unsubBaseURL = process.env.removeURL || "https://apps.canada.ca/x-notify/subs/remove/";
+const _unsubBaseURL = process.env.removeURL || "https://apps.canada.ca/x-notify/subs/remove/",
+	_convertSubCode = process.env.convertSubCode || false;
 
 //
 // get subscription for a topic
@@ -69,7 +71,7 @@ exports.getTopicSubs = async ( req, res, next ) => {
 			},
 			{
 				projection: {
-					_id: 0,
+					_id: 1,
 					email: 1,
 					subscode: 1
 				}
@@ -97,14 +99,46 @@ exports.getTopicSubs = async ( req, res, next ) => {
 		});
 
 		let csv = '"email address","unsub_link"\r\n'; // Need to change this for a stream.
+		
+		let queriesUpdateMany = [];
 
 		docs.toArray( ( err, docsItems ) => {
 
 			// create CSV rows
-			let i, i_len = docsItems.length, i_cache;
+			let i, i_len = docsItems.length, i_cache, cached_code;
 			for( i = 0; i !== i_len; i++) {
-				i_cache = docsItems[ i ];				
-				csv += '"' + i_cache.email + '","' + _unsubBaseURL + i_cache.subscode + "/" + i_cache.email + '"\r\n';
+				i_cache = docsItems[ i ];
+				
+				// To support deprecated query where the email was included in the URL, the subsequent URL can be made permanent after 60 days of it's deployment date
+				if ( _convertSubCode && i_cache.subscode.length ) {
+					let codeObj = new ObjectId();
+					
+					dbConn.collection( "subsConfirmed" ).updateOne(
+						{
+							_id: i_cache._id
+						},
+						{
+							$set: {
+								subscode: codeObj
+							}
+						}
+					);
+					
+					dbConn.collection( "subsConfirmedNewCode" ).insertOne(
+						{
+							subscode: i_cache.subscode,
+							email: i_cache.email,
+							newsubscode: codeObj,
+							topicId: topicId
+						}
+					);
+
+					cached_code = codeObj.toHexString();
+				} else {
+					cached_code = ( i_cache.subscode.length ? i_cache.subscode : i_cache.subscode.toHexString() ); 
+				}
+				
+				csv += '"' + i_cache.email + '","' + _unsubBaseURL + cached_code + '"\r\n';
 			}
 
 			// Send the file
