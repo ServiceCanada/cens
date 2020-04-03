@@ -42,6 +42,8 @@ Server will run at `0.0.0.0:8080` by default.
 `flushAccessCode` Private code to allow to flush the cache. Default: undefined
 `flushAccessCode2` Private second code to allow to flush the cache. Default: undefined
 
+`_convertSubCode` Migration of old subcode to one created with an uid during the download csv files. Default: false
+
 ## Collections
 
 topics
@@ -113,6 +115,13 @@ managersAccess
 	tId: Topic ID
 	code: Access code used
 
+subsConfirmedNewCode
+	subscode
+	email
+	newsubscode
+	topicId
+
+
 ## Indexes
 
 ```
@@ -126,10 +135,6 @@ db.subsUnconfirmed.createIndexes( [
 ]);
 
 
-db.subsConfirmed.createIndex(
-	{ email: 1, subscode: 1 },
-	{ unique: true }
-);
 db.subsConfirmed.createIndex(
 	{ topicId: 1, email: 1 },
 	{ unique: true }
@@ -145,6 +150,19 @@ db.subsExist.createIndex(
 db.subsUnsubs.createIndex(
 	{ c: 1 },
 	{ expireAfterSeconds: 2952000 }
+);
+
+
+// To be applied after the conversion, the previous version has a risk of duplicate subscode
+db.subsConfirmed.createIndex(
+	{ subscode: 1 },
+	{ unique: true }
+);
+
+// Depricated - to remove after subscode is converted
+db.subsConfirmed.createIndex(
+	{ email: 1, subscode: 1 },
+	{ unique: true }
 );
 
 ```

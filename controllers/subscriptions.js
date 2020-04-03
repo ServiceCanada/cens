@@ -8,7 +8,10 @@
 
 const NotifyClient = require('notifications-node-client').NotifyClient; // https://docs.notifications.service.gov.uk/node.html#node-js-client-documentation
 
+const entities = require("entities");
+
 const dbConn = module.parent.exports.dbConn;
+const ObjectId = require('mongodb').ObjectId;
 
 const processEnv = process.env,
 	_devLog = !!!processEnv.prodNoLog,
@@ -65,9 +68,9 @@ generateKey = () => {
 exports.addEmail = async ( req, res, next ) => {
 	
 	const reqbody = req.body,
-		email = reqbody.eml || "",
 		topicId = reqbody.tid,
 		currDate = new Date();
+	let email = reqbody.eml || "";
 
 	// Validate if email is the good format (something@something.tld)
 	if ( !email.match( /.+\@.+\..+/ ) || !topicId ) {
@@ -75,7 +78,10 @@ exports.addEmail = async ( req, res, next ) => {
 		res.json( _cErrorsJSO );
 		return;
 	}
-	
+
+	// URL Decrypt the email. It is double encoded like: "&amp;#39;" should be "&#39;" which should be "'"
+	email = await entities.decodeXML( await entities.decodeXML( email ) );
+
 	// Get the topic
 	const topic = await getTopic( topicId );
 	
@@ -93,11 +99,11 @@ exports.addEmail = async ( req, res, next ) => {
 			{
 				e: email,
 				t: topicId
-			}).then( () => {
+			}).then( ( docSExist ) => {
 
 				// The email is not subscribed for that topic
 				// Generate an simple Unique Code
-				const confirmCode = _bypassSubscode || (Math.floor(Math.random() * 999999) + "" + currDate.getMilliseconds()),
+				const confirmCode = _bypassSubscode || docSExist.insertedId,
 					tId = topic.templateId,
 					nKey = topic.notifyKey;
 				
@@ -117,7 +123,7 @@ exports.addEmail = async ( req, res, next ) => {
 				});
 
 				// Send confirm email - async
-				sendNotifyConfirmEmail( email, confirmCode, tId, nKey );
+				sendNotifyConfirmEmail( email, confirmCode.toHexString(), tId, nKey );
 				
 				res.json( _successJSO );
 			}).catch( ( ) => {
@@ -150,18 +156,18 @@ exports.addEmail = async ( req, res, next ) => {
 exports.addEmailPOST = async ( req, res, next ) => {
 	
 	const reqbody = req.body,
-		email = reqbody.eml || "",
 		topicId = reqbody.tid,
 		key = reqbody.auke || "",
 		host = req.headers.host,
 		currDate = new Date(),
 		currEpoc = Date.now(); 
+	let email = reqbody.eml || "";
 
 	let keyBuffer = new Buffer(key, 'base64'),
 		keyDecrypt = keyBuffer.toString('ascii');
 	
 	keyDecrypt = keyDecrypt.substring( _keySalt.length );
-		
+
 	// If no data, key not matching or referer not part of whitelist, then not worth going further
 	if ( !reqbody || _validHosts.indexOf(host) === -1 || keyDecrypt < currEpoc ) {
 
@@ -187,17 +193,20 @@ exports.addEmailPOST = async ( req, res, next ) => {
 			res.redirect( topic.inputErrURL );
 			return;
 		}
-		
+
+		// URL Decrypt the email. It is double encoded like: "&amp;#39;" should be "&#39;" which should be "'"
+		email = await entities.decodeXML( await entities.decodeXML( email ) );
+
 		// Check if the email is in the "SubsExist"
 		await dbConn.collection( "subsExist" ).insertOne( 
 			{
 				e: email,
 				t: topicId
-			}).then( () => {
+			}).then( ( docSExist ) => {
 
 				// The email is not subscribed for that topic
 				// Generate an simple Unique Code
-				const confirmCode = _bypassSubscode || (Math.floor(Math.random() * 999999) + "" + currDate.getMilliseconds()),
+				const confirmCode = _bypassSubscode || docSExist.insertedId,
 					tId = topic.templateId,
 					nKey = topic.notifyKey;
 				
@@ -217,7 +226,7 @@ exports.addEmailPOST = async ( req, res, next ) => {
 				});
 
 				// Send confirm email - async
-				sendNotifyConfirmEmail( email, confirmCode, tId, nKey );
+				sendNotifyConfirmEmail( email, confirmCode.toHexString(), tId, nKey );
 				
 				res.redirect( topic.thankURL );
 			}).catch( () => {
@@ -238,6 +247,7 @@ exports.addEmailPOST = async ( req, res, next ) => {
 
 };
 
+
 //
 // Confirm subscription email
 //
@@ -246,17 +256,35 @@ exports.addEmailPOST = async ( req, res, next ) => {
 exports.confirmEmail = ( req, res, next ) => {
 
 	// Request param: email, confirmCode
-	const { subscode, email } = req.params,
+	let { subscode, emlParam } = req.params,
 		currDate = new Date();
 	
-	// TODO: validate parameters.
+	let findQuery = { subscode: subscode };
+	
+	// If no email, ensure the subscode if longer than 9 character
+	// (conditional to support deprecated query where the email was included in the URL, can be removed after 60 days of it's deployment date)
+	if ( emlParam && subscode.length < 10 ) {
+		findQuery.email = emlParam;
+		subscode = new ObjectId();
+	} else {
+		subscode = ObjectId( subscode );
+		findQuery.subscode = subscode;
+	}
 
 	dbConn.collection( "subsUnconfirmed" )
-		.findOneAndDelete( { email: email, subscode: subscode } )
+		.findOneAndDelete( findQuery )
 		.then( async ( docSubs ) => {
 
-			const docValue = docSubs.value,
-				topicId = docValue.topicId;
+			const docValue = docSubs.value;
+			
+			if ( !docValue ) {
+				console.log( "confirmEmail: not found" );
+				res.redirect( _errorPage );
+				return;
+			}
+			
+			const topicId = docValue.topicId,
+				email = docValue.email;
 			
 			// move into confirmed list
 			await dbConn.collection( "subsConfirmed" ).insertOne( {
@@ -315,21 +343,54 @@ exports.confirmEmail = ( req, res, next ) => {
 exports.removeEmail = ( req, res, next ) => {
 
 	// Request param: email, confirmCode
-	const { subscode, email } = req.params,
+	let { subscode, emlParam } = req.params,
 		currDate = new Date();
+	
+		
+	let findQuery = { subscode: subscode };
+	
+	// If no email, ensure the subscode if longer than 9 character
+	// (conditional to support deprecated query where the email was included in the URL, can be removed after 60 days of it's deployment date)
+	if ( emlParam && subscode.length < 10 ) {
+		findQuery.email = emlParam;
+	} else {
+		subscode = ObjectId( subscode );
+		findQuery.subscode = subscode;
+	}
 	
 	// findOneAndDeleted in subsConfirmedEmail document
 	dbConn.collection( "subsConfirmed" )
-		.findOneAndDelete( { email: email, subscode: subscode } )
+		.findOneAndDelete( findQuery )
 		.then( async ( docSubs ) => {
+
+			let docValue = docSubs.value;
+
+			// Try if that code was converted
+			// To support deprecated query where the email was included in the URL, the subsequent URL can be made permanent after 60 days of it's deployment date
+			if ( !docValue && findQuery.email ) {
+				docNewSubs = await dbConn.collection( "subsConfirmedNewCode" ).findOneAndDelete( findQuery );
+				if ( !docNewSubs.value ) {
+					console.log( "removeEmail: not found in subsConfirmedNewCode" );
+					res.redirect( _errorPage );
+					return;
+				}
+				findQuery.subscode = docNewSubs.value.newsubscode;
+				docSubsConf = await dbConn.collection( "subsConfirmed" ).findOneAndDelete( findQuery );
+				docValue = docNewSubs.value;
+			}
 			
+			if ( !docValue ) {
+				console.log( "removeEmail: not found" );
+				res.redirect( _errorPage );
+				return;
+			}
 			
-			const topicId = docSubs.value.topicId;
-			const topic = await getTopic( topicId );
+			const topicId = docValue.topicId,
+				email = docValue.email,
+				topic = await getTopic( topicId );
 
 			if ( !topic ) {
 				console.log( "removeEmail: notopic" );
-				console.log( e );
 				res.redirect( _errorPage );
 				return true;
 			}
@@ -469,7 +530,10 @@ resendEmailNotify = ( email, topicId, currDate ) => {
 				console.log( e );
 			});
 
-			await docValue && sendNotifyConfirmEmail( email, docValue.subscode, docValue.tId, docValue.nKey );
+			// To support deprecated query where the email was included in the URL, the subsequent URL can be made permanent after 60 days of it's deployment date
+			let subscode = ( docValue.subscode.length ? docValue.subscode : docValue.subscode.toHexString() );
+			
+			await docValue && sendNotifyConfirmEmail( email, subscode, docValue.tId, docValue.nKey );
 
 			
 		})
@@ -507,9 +571,13 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 
 	}
 	
+	
+	// To support deprecated query where the email was included in the URL, the subsequent URL can be made permanent after 60 days of it's deployment date
+	const codeURL = ( confirmCode.length ? confirmCode : confirmCode.toHexSTring() );
+	
 	!_bypassSubscode && notifyClient.sendEmail( templateId, email, 
 		{
-			personalisation: { confirm_link: _confirmBaseURL + confirmCode + "/" + email },
+			personalisation: { confirm_link: _confirmBaseURL + codeURL },
 			reference: "x-notify_subs_confirm"
 		})
 		.catch( ( e ) => {

@@ -96,8 +96,10 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	//app.post('/api/v0.1/subs/email/confirm', subsController.confirmEmail); // TODO: need to handle data from "post"
 	//app.post('/api/v0.1/subs/email/remove', subsController.removeEmail); // TODO: need to handle data from "post"
 	
-	app.get('/subs/confirm/:subscode/:email', subsController.confirmEmail);
-	app.get('/subs/remove/:subscode/:email', subsController.removeEmail);
+	app.get('/subs/confirm/:subscode/:emlParam', subsController.confirmEmail); // Deprecated, to be removed after 60 days of it's deployment date
+	app.get('/subs/remove/:subscode/:emlParam', subsController.removeEmail); // Deprecated, to be removed after 60 days of it's deployment date
+	app.get('/subs/confirm/:subscode', subsController.confirmEmail);
+	app.get('/subs/remove/:subscode', subsController.removeEmail);
 	app.post('/subs/post',
 		bodyParser.urlencoded({extended:false, limit: '10kb'}),
 		subsController.addEmailPOST);
@@ -109,19 +111,27 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	 * Manager routes.
 	 */
 	//app.param('/api/v0.1/t-manager/:code/:topic', managersController.validateCodeTopic);
-	app.get('/api/v0.1/t-manager/:accessCode/:topicId/list', managersController.getTopicSubs);
+	app.get('/api/v0.1/t-manager/:accessCode/:topicId/list',
+		passport.authenticate('basic', { session: false }),
+		managersController.getTopicSubs);
 	app.get('/api/v0.1/t-manager/:accessCode/:topicId/bulk/form',
+		passport.authenticate('basic', { session: false }),
 		managersController.serveBulkForm);
 	app.post('/api/v0.1/t-manager/:accessCode/:topicId/bulk/action',
+		passport.authenticate('basic', { session: false }),
 		bodyParser.urlencoded({extended:true, limit: '50mb'}),
 		managersController.actionBulk);
-	app.get('/api/v0.1/t-manager/:accessCode/:topicId/email/add/test', subsController.testAdd);
+	app.get('/api/v0.1/t-manager/:accessCode/:topicId/email/add/test',
+		passport.authenticate('basic', { session: false }),
+		subsController.testAdd);
 
 	/**
 	 * Admin routes.
 	 */
 	// app.get('/subs/remove_unconfirm/:subscode/:email', subsController.removeUnconfirmEmail);
-	app.get('/api/v0.1/t-manager/:accessCode/:topicId/flush-cache', subsController.flushCache);
+	app.get('/api/v0.1/t-manager/:accessCode/:topicId/flush-cache',
+		passport.authenticate('basic', { session: false }),
+		subsController.flushCache);
 
 	/**
 	 * Error Handler.
