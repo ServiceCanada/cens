@@ -169,9 +169,10 @@ exports.addEmailPOST = async ( req, res, next ) => {
 	keyDecrypt = keyDecrypt.substring( _keySalt.length );
 
 	// If no data, key not matching or referer not part of whitelist, then not worth going further
-	if ( !reqbody || _validHosts.indexOf(host) === -1 || keyDecrypt < currEpoc ) {
+	// _validHost need to be changed for "validReferer" || _validHosts.indexOf(host) === -1 
+	if ( !reqbody || keyDecrypt < currEpoc ) {
 
-		console.log( "addEmailPOST: noauth" );
+		console.log( "addEmailPOST: noauth " + key + " " + host);
 		res.redirect( _errorPage );
 		return true;
 	}
