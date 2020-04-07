@@ -33,8 +33,9 @@ const processEnv = process.env,
 let notifyCached = [],
 	notifyCachedIndexes = [],
 	topicCached = [],
-	topicCachedIndexes = [];
-
+	topicCachedIndexes = [],
+	fakeSubsIncrement = 0;
+	
 //
 // Get key
 //
@@ -99,16 +100,16 @@ exports.addEmail = async ( req, res, next ) => {
 			{
 				e: email,
 				t: topicId
-			}).then( ( docSExist ) => {
+			}).then( async ( docSExist ) => {
 
 				// The email is not subscribed for that topic
 				// Generate an simple Unique Code
-				const confirmCode = _bypassSubscode || docSExist.insertedId,
+				const confirmCode = docSExist.insertedId,
 					tId = topic.templateId,
 					nKey = topic.notifyKey;
 				
 				// Insert in subsToConfirm
-				dbConn.collection( "subsUnconfirmed" ).insertOne( {
+				await dbConn.collection( "subsUnconfirmed" ).insertOne( {
 					email: email,
 					subscode: confirmCode,
 					topicId: topicId,
@@ -125,7 +126,12 @@ exports.addEmail = async ( req, res, next ) => {
 				// Send confirm email - async
 				sendNotifyConfirmEmail( email, confirmCode.toHexString(), tId, nKey );
 				
+				if ( _bypassSubscode ) {
+					res.subscode = confirmCode.toHexString();
+				}
+				
 				res.json( _successJSO );
+				
 			}).catch( ( ) => {
 			
 				// The email was either subscribed-pending or subscribed confirmed
@@ -203,16 +209,16 @@ exports.addEmailPOST = async ( req, res, next ) => {
 			{
 				e: email,
 				t: topicId
-			}).then( ( docSExist ) => {
+			}).then( async ( docSExist ) => {
 
 				// The email is not subscribed for that topic
 				// Generate an simple Unique Code
-				const confirmCode = _bypassSubscode || docSExist.insertedId,
+				const confirmCode = docSExist.insertedId,
 					tId = topic.templateId,
 					nKey = topic.notifyKey;
 				
 				// Insert in subsToConfirm
-				dbConn.collection( "subsUnconfirmed" ).insertOne( {
+				await dbConn.collection( "subsUnconfirmed" ).insertOne( {
 					email: email,
 					subscode: confirmCode,
 					topicId: topicId,
@@ -229,7 +235,12 @@ exports.addEmailPOST = async ( req, res, next ) => {
 				// Send confirm email - async
 				sendNotifyConfirmEmail( email, confirmCode.toHexString(), tId, nKey );
 				
+				if ( _bypassSubscode ) {
+					res.subscode = confirmCode.toHexString();
+				}
+
 				res.redirect( topic.thankURL );
+
 			}).catch( () => {
 			
 				// The email was either subscribed-pending or subscribed confirmed
@@ -683,3 +694,78 @@ exports.testAdd = ( req, res, next ) => {
 		'</html>' 
 	);
 };
+
+
+exports.simulateAddJSON = async ( req, res, next ) => {
+
+	if ( !_bypassSubscode ) {
+		return;
+	}
+
+	const { prefix, suffix, topicId } = req.params,
+		email = prefix + fakeSubsIncrement + suffix;
+	
+	fakeSubsIncrement = fakeSubsIncrement + 1;
+
+	// addEmail
+	let responseFake = {
+			json: function(){}
+		};
+	
+	await exports.addEmail( { 
+			body: {
+				tid: topicId,
+				eml: email
+			}
+		}, responseFake );
+
+	// Confirm the email
+	await exports.confirmEmail( { 
+			params: {
+				subscode: responseFake.subscode
+			}
+		}, {
+			redirect: function(){}
+		} );
+	
+	res.json( { test: "ok" } );
+}
+
+exports.simulateAddPost = async ( req, res, next ) => {
+
+	if ( !_bypassSubscode ) {
+		return;
+	}
+
+	const { prefix, suffix, topicId } = req.params,
+		email = prefix + fakeSubsIncrement + suffix,
+		key = await generateKey();
+	
+	fakeSubsIncrement = fakeSubsIncrement + 1;
+
+	// addEmailPOST
+	let responseFake = {
+			redirect: function(){}
+		};
+
+	await exports.addEmailPOST( { 
+			body: {
+				tid: topicId,
+				eml: email,
+				auke: key.authKey
+			},
+			headers: {}
+		}, responseFake );
+
+	// Confirm the email
+	await exports.confirmEmail( { 
+			params: {
+				subscode: responseFake.subscode
+			}
+		}, {
+			redirect: function(){}
+		} );
+	
+	res.json( { test: "ok" } );
+}
+
