@@ -124,6 +124,10 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	app.get('/api/v0.1/t-manager/:accessCode/:topicId/email/add/test',
 		passport.authenticate('basic', { session: false }),
 		subsController.testAdd);
+	app.get('/api/v0.1/t-manager/:topicId/:prefix/:suffix/test/addJSON',
+		subsController.simulateAddJSON);
+	app.get('/api/v0.1/t-manager/:topicId/:prefix/:suffix/test/addPost',
+		subsController.simulateAddPost );
 
 	/**
 	 * Admin routes.
