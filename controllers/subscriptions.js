@@ -517,6 +517,12 @@ resendEmailNotify = ( email, topicId, currDate ) => {
 			
 			const docValue = docSubs.value;
 			
+			// if docValue is null, that means the person are trying again before the _nbMinutesDF delay
+			if ( !docValue ) {
+				console.log( "resendEmailNotify: must wait " + email + ":" + topicId + " -" + currDate.getTime() );
+				return true;
+			}
+			
 			// subs_logs entry - this can be async
 			_devLog && dbConn.collection( "subs_logs" ).updateOne( 
 				{ _id: email },
@@ -550,7 +556,7 @@ resendEmailNotify = ( email, topicId, currDate ) => {
 			
 		})
 		.catch( (e) => {
-			console.log( "resendEmailNotify: subsUnconfirmed" );
+			console.log( "resendEmailNotify: subsUnconfirmed " + email + ":" + topicId );
 			console.log( e );
 		});
 
