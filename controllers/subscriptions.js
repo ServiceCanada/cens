@@ -290,8 +290,7 @@ exports.confirmEmail = ( req, res, next ) => {
 			const docValue = docSubs.value;
 			
 			if ( !docValue ) {
-				console.log( "confirmEmail: not found" );
-				res.redirect( _errorPage );
+				res.redirect( await getRedirectForRecents( findQuery, true ) || _errorPage );
 				return;
 			}
 			
@@ -304,6 +303,18 @@ exports.confirmEmail = ( req, res, next ) => {
 				subscode: subscode,
 				topicId: topicId
 			});
+			
+			// Be aware for a TTL 7 days, if user click again.
+			dbConn.collection( "subsRecents" ).findOneAndUpdate( {
+					subscode: subscode
+				}, {
+					$set: {
+						created: currDate,
+						email: email,
+						subscode: subscode,
+						topicId: topicId
+					}
+				}, { upsert: 1 });
 
 			// subs_logs entry - this can be async
 			_devLog && dbConn.collection( "subs_logs" ).updateOne( 
@@ -382,8 +393,7 @@ exports.removeEmail = ( req, res, next ) => {
 			if ( !docValue && findQuery.email ) {
 				docNewSubs = await dbConn.collection( "subsConfirmedNewCode" ).findOneAndDelete( findQuery );
 				if ( !docNewSubs.value ) {
-					console.log( "removeEmail: not found in subsConfirmedNewCode" );
-					res.redirect( _errorPage );
+					res.redirect( await getRedirectForRecents( findQuery ) || _errorPage );
 					return;
 				}
 				findQuery.subscode = docNewSubs.value.newsubscode;
@@ -392,8 +402,7 @@ exports.removeEmail = ( req, res, next ) => {
 			}
 			
 			if ( !docValue ) {
-				console.log( "removeEmail: not found" );
-				res.redirect( _errorPage );
+				res.redirect( await getRedirectForRecents( findQuery ) || _errorPage );
 				return;
 			}
 			
@@ -443,6 +452,20 @@ exports.removeEmail = ( req, res, next ) => {
 					e:email,
 					t: topicId
 				}).then( ( ) => {
+					
+					
+					// Be aware for a TTL 7 days, if user click again.
+					dbConn.collection( "subsRecents" ).findOneAndUpdate( {
+						subscode: subscode
+					}, {
+						$set: {
+							created: currDate,
+							email: email,
+							subscode: subscode,
+							topicId: topicId,
+							link: unsubLink
+						}
+					}, { upsert: 1 });
 					
 					// Redirect to Generic page to confirm the email is removed
 					res.redirect( unsubLink );
@@ -561,6 +584,55 @@ resendEmailNotify = ( email, topicId, currDate ) => {
 		});
 
 }
+
+
+//
+// getRedirectForRecents - Check recent transaction when second confirm/unsubs and return redirect
+//
+getRedirectForRecents = async ( query, mustBeSubscribed ) => {
+	
+	docValue = await dbConn.collection( "subsRecents" ).findOne( query );
+
+	if ( !docValue ) {
+		console.log( "getRedirectForRecents: not found: " + ( mustBeSubscribed ? "c ": "r " ) + JSON.stringify( query ) );
+		return false;
+	}
+	
+	const topicId = docValue.topicId,
+		email = docValue.email,
+		subscode = query.subscode;
+
+	if ( mustBeSubscribed ) {
+	
+		// Ensure the person is registered
+		dbConn.collection( "subsConfirmed" ).insertOne( {
+			email: email,
+			subscode: subscode,
+			topicId: topicId
+		}).then( () => {
+
+			// Resubscribe the user
+			dbConn.collection( "subsExist" ).insertOne( {
+				e: email,
+				t: topicId
+			})
+			
+			console.log( "getRedirectForRecents: re-subscribed" );
+		}).catch( () => {
+			
+			// Ignore, that means it is already confirmed
+		});
+		
+		// Get the confirmURL (in the case of it was an unsub) and do the redirect
+		const topic = await getTopic( topicId );
+
+		return topic.confirmURL;
+	}
+
+	// This is an unsub, just return the last know link
+	return docValue.link;
+}
+
 
 //
 // Send an email through Notify API

@@ -98,6 +98,12 @@ subs_logs
 	unsubsEmail: Array of <subsInfo>
 	resendEmail: Array of <subInfoResend>	
 
+subsRecents
+	email
+	subscode
+	topicId
+	link: Only there when unsubscribing
+	
 ### Sub documents
 
 subsInfo
@@ -151,6 +157,15 @@ db.subsUnsubs.createIndex(
 	{ c: 1 },
 	{ expireAfterSeconds: 2952000 }
 );
+
+
+db.subsRecents.createIndex(
+	{ created: 1 },
+	{ expireAfterSeconds: 604800 }
+)
+db.subsRecents.createIndex(
+	{ subscode: 1 }
+)
 
 
 // To be applied after the conversion, the previous version has a risk of duplicate subscode
