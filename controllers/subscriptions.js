@@ -316,7 +316,7 @@ exports.confirmEmail = ( req, res, next ) => {
 						subscode: subscode,
 						topicId: topicId
 					}
-				}, { upsert: 1 });
+				}, { upsert: true });
 
 			// subs_logs entry - this can be async
 			_devLog && dbConn.collection( "subs_logs" ).updateOne( 
@@ -467,7 +467,7 @@ exports.removeEmail = ( req, res, next ) => {
 							topicId: topicId,
 							link: unsubLink
 						}
-					}, { upsert: 1 });
+					}, { upsert: true });
 					
 					// Redirect to Generic page to confirm the email is removed
 					res.redirect( unsubLink );
