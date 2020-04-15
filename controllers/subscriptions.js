@@ -28,13 +28,15 @@ const processEnv = process.env,
 	_topicCacheLimit = processEnv.topicCacheLimit || 50,
 	_notifyCacheLimit = processEnv.notifyCacheLimit || 40,
 	_flushAccessCode = processEnv.flushAccessCode,
-	_flushAccessCode2 = processEnv.flushAccessCode2;
+	_flushAccessCode2 = processEnv.flushAccessCode2,
+	_notifyUsTimeLimit = processEnv.notifyUsTimeLimit || 180000;
 
 let notifyCached = [],
 	notifyCachedIndexes = [],
 	topicCached = [],
 	topicCachedIndexes = [],
-	fakeSubsIncrement = 0;
+	fakeSubsIncrement = 0,
+	_notifyUsNotBeforeTimeLimit = 0;
 	
 //
 // Get key
@@ -290,8 +292,7 @@ exports.confirmEmail = ( req, res, next ) => {
 			const docValue = docSubs.value;
 			
 			if ( !docValue ) {
-				console.log( "confirmEmail: not found" );
-				res.redirect( _errorPage );
+				res.redirect( await getRedirectForRecents( findQuery, true ) || _errorPage );
 				return;
 			}
 			
@@ -304,6 +305,18 @@ exports.confirmEmail = ( req, res, next ) => {
 				subscode: subscode,
 				topicId: topicId
 			});
+			
+			// Be aware for a TTL 7 days, if user click again.
+			dbConn.collection( "subsRecents" ).findOneAndUpdate( {
+					subscode: subscode
+				}, {
+					$set: {
+						created: currDate,
+						email: email,
+						subscode: subscode,
+						topicId: topicId
+					}
+				}, { upsert: 1 });
 
 			// subs_logs entry - this can be async
 			_devLog && dbConn.collection( "subs_logs" ).updateOne( 
@@ -382,8 +395,7 @@ exports.removeEmail = ( req, res, next ) => {
 			if ( !docValue && findQuery.email ) {
 				docNewSubs = await dbConn.collection( "subsConfirmedNewCode" ).findOneAndDelete( findQuery );
 				if ( !docNewSubs.value ) {
-					console.log( "removeEmail: not found in subsConfirmedNewCode" );
-					res.redirect( _errorPage );
+					res.redirect( await getRedirectForRecents( findQuery ) || _errorPage );
 					return;
 				}
 				findQuery.subscode = docNewSubs.value.newsubscode;
@@ -392,8 +404,7 @@ exports.removeEmail = ( req, res, next ) => {
 			}
 			
 			if ( !docValue ) {
-				console.log( "removeEmail: not found" );
-				res.redirect( _errorPage );
+				res.redirect( await getRedirectForRecents( findQuery ) || _errorPage );
 				return;
 			}
 			
@@ -443,6 +454,20 @@ exports.removeEmail = ( req, res, next ) => {
 					e:email,
 					t: topicId
 				}).then( ( ) => {
+					
+					
+					// Be aware for a TTL 7 days, if user click again.
+					dbConn.collection( "subsRecents" ).findOneAndUpdate( {
+						subscode: subscode
+					}, {
+						$set: {
+							created: currDate,
+							email: email,
+							subscode: subscode,
+							topicId: topicId,
+							link: unsubLink
+						}
+					}, { upsert: 1 });
 					
 					// Redirect to Generic page to confirm the email is removed
 					res.redirect( unsubLink );
@@ -517,6 +542,12 @@ resendEmailNotify = ( email, topicId, currDate ) => {
 			
 			const docValue = docSubs.value;
 			
+			// if docValue is null, that means the person are trying again before the _nbMinutesDF delay
+			if ( !docValue ) {
+				console.log( "resendEmailNotify: must wait " + email + ":" + topicId + " -" + currDate.getTime() );
+				return true;
+			}
+			
 			// subs_logs entry - this can be async
 			_devLog && dbConn.collection( "subs_logs" ).updateOne( 
 				{ _id: email },
@@ -550,11 +581,60 @@ resendEmailNotify = ( email, topicId, currDate ) => {
 			
 		})
 		.catch( (e) => {
-			console.log( "resendEmailNotify: subsUnconfirmed" );
+			console.log( "resendEmailNotify: subsUnconfirmed " + email + ":" + topicId );
 			console.log( e );
 		});
 
 }
+
+
+//
+// getRedirectForRecents - Check recent transaction when second confirm/unsubs and return redirect
+//
+getRedirectForRecents = async ( query, mustBeSubscribed ) => {
+	
+	docValue = await dbConn.collection( "subsRecents" ).findOne( query );
+
+	if ( !docValue ) {
+		console.log( "getRedirectForRecents: not found: " + ( mustBeSubscribed ? "c ": "r " ) + JSON.stringify( query ) );
+		return false;
+	}
+	
+	const topicId = docValue.topicId,
+		email = docValue.email,
+		subscode = query.subscode;
+
+	if ( mustBeSubscribed ) {
+	
+		// Ensure the person is registered
+		dbConn.collection( "subsConfirmed" ).insertOne( {
+			email: email,
+			subscode: subscode,
+			topicId: topicId
+		}).then( () => {
+
+			// Resubscribe the user
+			dbConn.collection( "subsExist" ).insertOne( {
+				e: email,
+				t: topicId
+			})
+			
+			console.log( "getRedirectForRecents: re-subscribed" );
+		}).catch( () => {
+			
+			// Ignore, that means it is already confirmed
+		});
+		
+		// Get the confirmURL (in the case of it was an unsub) and do the redirect
+		const topic = await getTopic( topicId );
+
+		return topic.confirmURL;
+	}
+
+	// This is an unsub, just return the last know link
+	return docValue.link;
+}
+
 
 //
 // Send an email through Notify API
@@ -596,28 +676,114 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 			// Log the Notify errors
 
 			const currDate = new Date(),
-				errDetails = e.error.errors[0];
-
-			// notify_logs entry - this can be async
-			dbConn.collection( "notify_logs" ).insertOne( 
-				{
-					createdAt: currDate,
-					templateId: templateId,
-					e: errDetails.error,
-					msg: errDetails.message,
-					statusCode: e.error.status_code,
-					err: e.toString(),
-					code: confirmCode
-				},
-				{ upsert: true }
-			).catch( (e2) => {
-				console.log( "sendNotifyConfirmEmail: notify_logs: " + confirmCode );
-				console.log( e2 );
-				console.log( e );
-			});
-
-			// TODO: evaluate if we need to trigger something else
+				errDetails = e.error.errors[0],
+				statusCode = e.error.status_code,
+				msg = errDetails.message;
 			
+			
+			
+			if ( statusCode === 400 && msg.indexOf( "email_address" ) !== -1 ) {
+
+				//
+				// We need to remove that user and log it
+				//
+				// Removal of bad email should be done after 25 min, same delay used to the not-before
+				// The following task need to be quoeud and delayed. It could be addressed at the same time of APPS-26
+				//dbConn.collection( "subsUnconfirmed" ).findOneAndDelete(
+				//	{
+				//		email: email
+				//	}
+				//)
+				//dbConn.collection( "subsExist" ).findOneAndDelete(
+				//	{
+				//		e: email
+				//	}
+				//)
+				
+				
+				// Log
+				dbConn.collection( "notify_badEmail_logs" ).insertOne( 
+					{
+						createdAt: currDate,
+						code: confirmCode,
+						email: email
+					}
+				).catch( (e2) => {
+					console.log( "sendNotifyConfirmEmail: notify_badEmail_logs: " + confirmCode );
+					console.log( e2 );
+					console.log( e );
+				});
+
+			} else if ( statusCode === 429 ) {
+			
+				//
+				// This is a rate limit error, the system should notify us
+				//
+				dbConn.collection( "notify_tooManyReq_logs" ).insertOne( 
+					{
+						createdAt: currDate,
+						email: email,
+						code: confirmCode,
+						templateId: templateId,
+						details: msg
+					}
+				).catch( (e2) => {
+					console.log( "sendNotifyConfirmEmail: notify_tooManyReq_logs: " + confirmCode );
+					console.log( e2 );
+					console.log( e );
+				});
+
+				//
+				// Try to email us (only with the predefined interval)
+				//
+				if ( _notifyUsNotBeforeTimeLimit <= currDate.getTime() ) {
+					
+					// Readjust the limit for the next period
+					_notifyUsNotBeforeTimeLimit = currDate.getTime() + _notifyUsTimeLimit;
+					
+					
+					let ourNotifyClient = new NotifyClient( processEnv.OUR_NOTIFY_END_POINT, processEnv.OUR_NOTIFY_KEY );
+					let email_to = JSON.parse( processEnv.OUR_NOTIFY_SEND_EMAIL_TO || "[]" );
+
+
+					email_to.forEach( ( emailGOC ) => {
+
+						ourNotifyClient.sendEmail( processEnv.OUR_NOTIFY_TEMPLATE_ID, emailGOC,
+							{
+								personalisation: { msg: "x-notify 429 Too Many Request error :: " + confirmCode },
+								reference: "x-notify"
+							})
+							.catch( ( e2 ) => {
+								console.log( "sendNotifyConfirmEmail: notifying_us: " + confirmCode );
+								console.log( e2 );
+								console.log( e );
+							});
+					});
+				}
+				
+			} else {
+			
+				//
+				// Any other kind of error - https://docs.notifications.service.gov.uk/node.html#send-an-email-error-codes
+				//
+				// notify_logs entry - this can be async
+				dbConn.collection( "notify_logs" ).insertOne( 
+					{
+						createdAt: currDate,
+						templateId: templateId,
+						e: errDetails.error,
+						msg: msg,
+						statusCode: statusCode,
+						err: e.toString(),
+						code: confirmCode
+					}
+				).catch( (e2) => {
+					console.log( "sendNotifyConfirmEmail: notify_logs: " + confirmCode );
+					console.log( e2 );
+					console.log( e );
+				});
+			}
+		
 			console.log( "sendNotifyConfirmEmail: sendEmail " + confirmCode );
 		});
 }

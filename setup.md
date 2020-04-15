@@ -44,6 +44,15 @@ Server will run at `0.0.0.0:8080` by default.
 
 `_convertSubCode` Migration of old subcode to one created with an uid during the download csv files. Default: false
 
+
+Setting for frequency of notifying us - all the following MUST be set:
+`notifyUsTimeLimit` Number of millisecond to wait before to send again a email message `180000`
+`OUR_NOTIFY_END_POINT` Notify end point to us to notify us. Default: Nothing, but we can reuse the same as `notifyEndPoint`
+`OUR_NOTIFY_KEY` Our private Notify key to communicate with us. Default: Nothing
+`OUR_NOTIFY_SEND_EMAIL_TO` String array of emails to which to send a notification. Default: `[]`
+`OUR_NOTIFY_TEMPLATE_ID` Notify template ID to use when communicating with us.
+
+
 ## Collections
 
 topics
@@ -98,6 +107,12 @@ subs_logs
 	unsubsEmail: Array of <subsInfo>
 	resendEmail: Array of <subInfoResend>	
 
+subsRecents
+	email
+	subscode
+	topicId
+	link: Only there when unsubscribing
+	
 ### Sub documents
 
 subsInfo
@@ -122,6 +137,18 @@ subsConfirmedNewCode
 	topicId
 
 
+notify_badEmail_logs
+	createdAt
+	code
+	email
+
+notify_tooManyReq_logs
+	createdAt
+	email
+	code
+	templateId: Of Notify
+	details: Description of the error message returned
+	
 ## Indexes
 
 ```
@@ -151,6 +178,20 @@ db.subsUnsubs.createIndex(
 	{ c: 1 },
 	{ expireAfterSeconds: 2952000 }
 );
+
+
+db.subsRecents.createIndex(
+	{ created: 1 },
+	{ expireAfterSeconds: 604800 }
+)
+db.subsRecents.createIndex(
+	{ subscode: 1 }
+)
+
+db.notify_badEmail_logs.createIndex(
+	{ created: 1 },
+	{ expireAfterSeconds: 604800 }
+)
 
 
 // To be applied after the conversion, the previous version has a risk of duplicate subscode
