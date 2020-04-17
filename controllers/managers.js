@@ -157,6 +157,54 @@ exports.getTopicSubs = async ( req, res, next ) => {
 
 
 //
+// Get stats for a topic - Cumulative numbers of confirmed and unconfirmed email addresses
+//
+// @return; a simple page with the stats 
+//
+exports.getTopicStats = async ( req, res, next ) => {
+	
+	// Params: accessCode, topicId
+	const { accessCode, topicId } = req.params,
+		currDate = new Date(),
+		task = "stats";
+		
+	let nbConfirmed, nbUnconfirmed;
+
+	// Get numbers
+	nbConfirmed = await dbConn.collection( "subsConfirmed" ).countDocuments(
+		{
+			topicId: topicId
+		}
+	);
+	nbUnconfirmed = await dbConn.collection( "subsUnconfirmed" ).countDocuments(
+		{
+			topicId: topicId
+		}
+	);
+	
+	// Return the data
+	res.status( 200 ).send( '<!DOCTYPE html>\n' +
+		'<html lang="en">\n' +
+		'<head>\n' +
+		'<title>Cumulative subscription</title>\n' +
+		'</head>\n' +
+		'<body>\n' +
+		'	<h1>Cumulative subscription</h1>\n' +
+		'	<p>For: <strong>' + topicId + '</strong> as from <em>' + currDate.toString() + '</em></p>\n' +
+		'	<dl>\n' +
+		'		<dt>Confirmed</dt>\n' +   
+		'		<dd>' + ( nbConfirmed || 'N/A' ) +'<dd>\n' +
+		'		<dt>Awaiting email confirmation</dt>\n' +   
+		'		<dd>' + ( nbUnconfirmed || 'N/A' ) +'<dd>\n' +
+		'	</dl>\n' +
+		'</body>\n' +
+		'</html>' 
+	);
+	res.end();
+}
+
+
+//
 // prompt users with a form
 //
 // @return; an HTML blob
