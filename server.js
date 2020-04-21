@@ -114,6 +114,10 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	app.get('/api/v0.1/t-manager/:accessCode/:topicId/list',
 		passport.authenticate('basic', { session: false }),
 		managersController.getTopicSubs);
+	app.post('/api/v0.1/t-manager/:accessCode/:topicId/list',
+		passport.authenticate('basic', { session: false }),
+		bodyParser.urlencoded({extended:true, limit: '250k'}),
+		managersController.getTopicOver50kSubs);
 	app.get('/api/v0.1/t-manager/:accessCode/:topicId/bulk/form',
 		passport.authenticate('basic', { session: false }),
 		managersController.serveBulkForm);

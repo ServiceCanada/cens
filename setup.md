@@ -53,6 +53,19 @@ Setting for frequency of notifying us - all the following MUST be set:
 `OUR_NOTIFY_TEMPLATE_ID` Notify template ID to use when communicating with us.
 
 
+50k automation upload
+`CDS_NOTIFY_END_POINT` Notify end point to notify CDS. Default: Nothing, but we can reuse the same as `notifyEndPoint`
+`CDS_NOTIFY_KEY` CDS Notify key to communicate let them know we completed the upload. Default: Nothing
+`CDS_NOTIFY_SEND_EMAIL_TO` String array of emails to which to send a notification to CDS. Default: `[]`
+`CDS_NOTIFY_TEMPLATE_ID` Notify template ID to use when communicating with CDS.
+
+`AWS_ACCESS_KEY` AWS access key for S3, provided by CDS
+`AWS_SECRET_ACCESS_KEY` AWS secret access key for S3, provided by CDS
+`AWS_BUCKET` AWS bucket name to use for the upload 
+
+Note: We need to set the Service ID associated to the topic details (field: `nServiceId`) otherwise the file name will start with "test-". We can extract that number from the Notify API Key they have provided, it is `apikey.substring(apikey.length - 73, apikey.length - 37)`
+
+
 ## Collections
 
 topics
@@ -72,6 +85,7 @@ topics_details
 	lang: Language of this topic
 	langAtl: Alternative language equivalent at this topic
 	retrieving: Array of <managersAccess>
+	nServiceId: Service ID associated with the notify key
 
 subsExist
 	e: email
