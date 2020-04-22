@@ -286,7 +286,7 @@ exports.confirmEmail = ( req, res, next ) => {
 		} catch ( e ) {
 
 			// The subscode is invalid, check if it is our edge case
-			invalidEdgeCaseURL( req.originalUrl );
+			invalidEdgeCaseURL( req );
 			console.log( "confirmEmail: invalid subscode /" + subscode );
 			res.redirect( _errorPage );
 			return;
@@ -393,7 +393,7 @@ exports.removeEmail = ( req, res, next ) => {
 		} catch ( e ) {
 
 			// The subscode is invalid, check if it is our edge case
-			invalidEdgeCaseURL( req.originalUrl );
+			invalidEdgeCaseURL( req );
 			console.log( "removeEmail: invalid subscode /" + subscode );
 			res.redirect( _errorPage );
 			return;
@@ -889,7 +889,7 @@ emailLetUsKnow = ( msg, logData ) => {
 //
 // Edge case - Confirm and Unsub URL cutted and base64 encoded
 //
-invalidEdgeCaseURL = ( url ) => {
+invalidEdgeCaseURL = ( req ) => {
 	
 	// Test procedure for Cut Base64 URL Edge Case 
 	//
@@ -909,8 +909,10 @@ invalidEdgeCaseURL = ( url ) => {
 	// * am8tYW5uZS => jo-anne
 	// * ZGxvZXdlbi => dloewen
 
-	const urlPart = url.split('/') || [],
-		lastSegment = urlPart[ urlPart.length - 1 ] || "";
+	const url = req.originalUrl,
+		urlPart = url.split('/') || [],
+		lastSegment = urlPart[ urlPart.length - 1 ] || "",
+		httpHeaders = req.headers;
 
 	let isEdgeCase = false,
 		decodedSegment = "";
@@ -931,7 +933,8 @@ invalidEdgeCaseURL = ( url ) => {
 			url: url,
 			lastSegment: lastSegment,
 			decoded: decodedSegment,
-			isEdgeCase: isEdgeCase
+			isEdgeCase: isEdgeCase,
+			httpHeaders: httpHeaders
 		} );
 
 	return isEdgeCase;
