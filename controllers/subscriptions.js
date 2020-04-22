@@ -281,7 +281,16 @@ exports.confirmEmail = ( req, res, next ) => {
 		findQuery.email = emlParam;
 		subscode = new ObjectId();
 	} else {
-		subscode = ObjectId( subscode );
+		try {
+			subscode = ObjectId( subscode );
+		} catch ( e ) {
+
+			// The subscode is invalid, check if it is our edge case
+			invalidEdgeCaseURL( req.originalUrl );
+			console.log( "confirmEmail: invalid subscode /" + subscode );
+			res.redirect( _errorPage );
+			return;
+		}
 		findQuery.subscode = subscode;
 	}
 
@@ -379,7 +388,17 @@ exports.removeEmail = ( req, res, next ) => {
 	if ( emlParam && subscode.length < 10 ) {
 		findQuery.email = emlParam;
 	} else {
-		subscode = ObjectId( subscode );
+		try {
+			subscode = ObjectId( subscode );
+		} catch ( e ) {
+
+			// The subscode is invalid, check if it is our edge case
+			invalidEdgeCaseURL( req.originalUrl );
+			console.log( "removeEmail: invalid subscode /" + subscode );
+			res.redirect( _errorPage );
+			return;
+		}
+
 		findQuery.subscode = subscode;
 	}
 	
@@ -676,6 +695,7 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 			// Log the Notify errors
 
 			const currDate = new Date(),
+				currDateTime = currDate.getTime(),
 				errDetails = e.error.errors[0],
 				statusCode = e.error.status_code,
 				msg = errDetails.message;
@@ -736,29 +756,17 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 				//
 				// Try to email us (only with the predefined interval)
 				//
-				if ( _notifyUsNotBeforeTimeLimit <= currDate.getTime() ) {
-					
+				if ( _notifyUsNotBeforeTimeLimit <= currDateTime ) {
+
+					emailLetUsKnow( "429 Too Many Request error", {
+							type: "ratelimit",
+							currTime: currDateTime,
+							lastTime: _notifyUsNotBeforeTimeLimit
+						} );
+
 					// Readjust the limit for the next period
-					_notifyUsNotBeforeTimeLimit = currDate.getTime() + _notifyUsTimeLimit;
-					
-					
-					let ourNotifyClient = new NotifyClient( processEnv.OUR_NOTIFY_END_POINT, processEnv.OUR_NOTIFY_KEY );
-					let email_to = JSON.parse( processEnv.OUR_NOTIFY_SEND_EMAIL_TO || "[]" );
+					_notifyUsNotBeforeTimeLimit = currDateTime + _notifyUsTimeLimit;
 
-
-					email_to.forEach( ( emailGOC ) => {
-
-						ourNotifyClient.sendEmail( processEnv.OUR_NOTIFY_TEMPLATE_ID, emailGOC,
-							{
-								personalisation: { msg: "x-notify 429 Too Many Request error :: " + confirmCode },
-								reference: "x-notify"
-							})
-							.catch( ( e2 ) => {
-								console.log( "sendNotifyConfirmEmail: notifying_us: " + confirmCode );
-								console.log( e2 );
-								console.log( e );
-							});
-					});
 				}
 				
 			} else {
@@ -831,7 +839,103 @@ getTopic = ( topicId ) => {
 		
 }
 
+//
+// Function to let us know (admin) when some special situation happen
+//
+emailLetUsKnow = ( msg, logData ) => {
 
+	const currDate = new Date();	
+
+	// Ensure we have some metadata for this notificaiton
+	logData = logData || { type: "general" };
+	logData.type = logData.type || "unknown";
+
+
+	//
+	// Log when the system should notify us
+	//
+	dbConn.collection( "notify_letUsKnow_logs" ).insertOne( 
+		{
+			createdAt: currDate,
+			logData: logData,
+			details: msg
+		}
+	).catch( (e) => {
+		console.log( "emailLetUsKnow: notify_letUsKnow_logs: " + logData.type + " :: " + currDate );
+		console.log( logData );
+		console.log( e );
+	});
+
+	//
+	// Send the email
+	//
+	let ourNotifyClient = new NotifyClient( processEnv.OUR_NOTIFY_END_POINT, processEnv.OUR_NOTIFY_KEY );
+	let email_to = JSON.parse( processEnv.OUR_NOTIFY_SEND_EMAIL_TO || "[]" );
+	email_to.forEach( ( emailGOC ) => {
+
+		ourNotifyClient.sendEmail( processEnv.OUR_NOTIFY_TEMPLATE_ID, emailGOC,
+			{
+				personalisation: { msg: msg },
+				reference: "x-notify"
+			})
+			.catch( ( e ) => {
+				console.log( "emailLetUsKnow: notifying_us: " + logData.type + " :: " + currDate );
+				console.log( e );
+			});
+	});
+
+}
+
+//
+// Edge case - Confirm and Unsub URL cutted and base64 encoded
+//
+invalidEdgeCaseURL = ( url ) => {
+	
+	// Test procedure for Cut Base64 URL Edge Case 
+	//
+	// 1. Get the last segment of the URL
+	// 2. Check if it's length is less than 11
+	// 3. Check if it's value can be a base64
+	//
+	// Test sample
+	// * /subs/confirm/522134181/ZGxvZXdlbk
+	// * /subs/confirm/707605989/aGVsZW5lLm
+	// * /subs/remove/47885547/am8tYW5uZS
+	// * /subs/confirm/522134181/ZGxvZXdlbi
+	// 
+	// Base64 decoded
+	// * ZGxvZXdlbk => dloewen
+	// * aGVsZW5lLm => helene.
+	// * am8tYW5uZS => jo-anne
+	// * ZGxvZXdlbi => dloewen
+
+	const urlPart = url.split('/') || [],
+		lastSegment = urlPart[ urlPart.length - 1 ] || "";
+
+	let isEdgeCase = false,
+		decodedSegment = "";
+	
+	if ( lastSegment.length && lastSegment.length < 15 && lastSegment.match( /^[A-Za-z0-9+/]+={0,2}$/ ) ) {
+		try {
+			let segmentBuffer = new Buffer( lastSegment, 'base64' );
+			decodedSegment = segmentBuffer.toString( 'ascii' );
+			isEdgeCase = true;
+		} catch ( e ) {
+			decodedSegment = "err-" + lastSegment;
+		}
+	}
+
+	// Notify us and save it
+	emailLetUsKnow( "Invalid URL for: " + url + " ; " + decodedSegment, {
+			type: "invalidURL",
+			url: url,
+			lastSegment: lastSegment,
+			decoded: decodedSegment,
+			isEdgeCase: isEdgeCase
+		} );
+
+	return isEdgeCase;
+}
 
 // Test add form
 //

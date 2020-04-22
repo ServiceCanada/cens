@@ -16,7 +16,8 @@
     "prod": "node server.js"
   },
   "dependencies": {
-	"chalk": "^3.0.0",
+    "aws-sdk": "^2.659.0",
+    "chalk": "^3.0.0",
     "compression": "^1.7.4",
     "dotenv": "^8.2.0",
     "entities": "^2.0.0",

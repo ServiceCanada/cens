@@ -121,7 +121,8 @@ db.topics_details.insertOne( {
 	groupName: "Department Name",
 	description: "Used for this service, related to request #",
 	lang: "en",
-	langAlt: [ "test" ]
+	langAlt: [ "test" ],
+	nServiceId: "test-serviceID-to-be-extracted-from-Notify-API-key"
 })
 ```
 
