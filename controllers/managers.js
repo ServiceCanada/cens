@@ -15,6 +15,7 @@ const ObjectId = require('mongodb').ObjectId;
 
 const _unsubBaseURL = process.env.removeURL || "https://apps.canada.ca/x-notify/subs/remove/",
 	_convertSubCode = process.env.convertSubCode || false,
+	_minBeforeToUploadOnly = process.env.minBeforeToUploadOnly || 50000,
 	_AWS_ACCESS_KEY = process.env.AWS_ACCESS_KEY || false,
 	_AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY || false;
 	_AWS_BUCKET = process.env.AWS_BUCKET || 'notify-csv-dump';
@@ -40,25 +41,11 @@ exports.getTopicSubs = async ( req, res, next ) => {
 	let topicId = topicDetails.topicId;
 	
 	// Count the number of confirmed
-	nbConfirmed = await getNumberConfirmed( topicId, { limit: 50001 } );
+	nbConfirmed = await getNumberConfirmed( topicId, { limit: _minBeforeToUploadOnly + 1 } );
 	
 	// If more than 50
-	if ( nbConfirmed >= 50000 ) {
-		res.status( 200 ).send( '<!DOCTYPE html>\n' +
-			'<html lang="en">\n' +
-			'<head>\n' +
-			'<title>Download subscriber for:' + topicId + '</title>\n' +
-			'</head>\n' +
-			'<body>\n' +
-			'	<h1>Download 50k+ subscriber</h1>\n' +
-			'<form action="' + req.originalUrl + '" method="post">\n' +
-			'	<p>Please provide the <strong>Notify template ID</strong> to use for your mailing.\n' +
-			'	<label>Notify Template ID: <input type="text" name="notifyTmplId" /></label>\n' +
-			'	<button type="submit">Submit</button>\n' +
-			'</form>\n' +
-			'</body>\n' +
-			'</html>' 
-		);
+	if ( nbConfirmed >= _minBeforeToUploadOnly ) {
+		res.status( 200 ).send( await getFormToUploadList( topicId, req.originalUrl ) );
 		res.end();
 		return;
 	}
@@ -72,6 +59,28 @@ exports.getTopicSubs = async ( req, res, next ) => {
 	res.status( 200 ).send( csv );
 	res.end();
 
+};
+
+//
+// Perform a direct upload
+//
+exports.uploadTopicSubs = async ( req, res, next ) => {
+	
+	// Ensure the user is authorized and get the topicId
+	let topicDetails = await isAuthorizedToDownload( req, "list-upload");
+
+	if ( !topicDetails ) {
+		res.json( { statusCode: 401, nal: 1 } );
+		res.end()
+		return;
+	}
+
+	// Get the post URL and remove the ending "-upload"
+	let url = req.originalUrl;
+	url = await url.substring( 0, url.length - 7 );
+	
+	res.status( 200 ).send( await getFormToUploadList( topicDetails.topicId, url ) );
+	res.end();
 };
 
 //
@@ -358,6 +367,29 @@ getConfirmedSubscriberAsCSV = async ( topicId ) => {
 		count: i_len
 	};
 };
+
+//
+// get HTML form to initiate the upload to notify
+//
+getFormToUploadList = ( topicId, url ) => {
+
+	return '<!DOCTYPE html>\n' +
+			'<html lang="en">\n' +
+			'<head>\n' +
+			'<title>Download subscriber for:' + topicId + '</title>\n' +
+			'</head>\n' +
+			'<body>\n' +
+			'	<h1>Download 50k+ subscriber</h1>\n' +
+			'<form action="' + url + '" method="post">\n' +
+			'	<p>Please provide the <strong>Notify template ID</strong> to use for your mailing.\n' +
+			'	<label>Notify Template ID: <input type="text" name="notifyTmplId" /></label>\n' +
+			'	<button type="submit">Submit</button>\n' +
+			'</form>\n' +
+			'</body>\n' +
+			'</html>';
+}
+
+
 
 //
 // prompt users with a form

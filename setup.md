@@ -42,7 +42,9 @@ Server will run at `0.0.0.0:8080` by default.
 `flushAccessCode` Private code to allow to flush the cache. Default: undefined
 `flushAccessCode2` Private second code to allow to flush the cache. Default: undefined
 
-`_convertSubCode` Migration of old subcode to one created with an uid during the download csv files. Default: false
+`convertSubCode` Migration of old subcode to one created with an uid during the download csv files. Default: false
+
+`minBeforeToUploadOnly` Minimum of subscription before to switch to the upload only to Notify feature. Default: `50000`
 
 
 Setting for frequency of notifying us - all the following MUST be set:
