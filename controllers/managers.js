@@ -151,7 +151,7 @@ exports.getTopicOver50kSubs = async ( req, res, next ) => {
 			'	<h1>Download subscriber</h1>\n' +
 			'	<p>For: <strong>' + topicId + '</strong> as from <em>' + currDate.toString() + '</em></p>\n' +
 			'	<p>Filename uploaded: ' + filenameUpload + '</p>\n' +
-			'	<p>Note: An email was directly sent to CDS about your request. Please contact them for the sending your request</p>\n' +
+			'	<p>Note: An email was directly sent to CDS about your request. Please contact them to pursue your request.</p>\n' +
 			'</body>\n' +
 			'</html>' 
 		);
@@ -168,8 +168,8 @@ exports.getTopicOver50kSubs = async ( req, res, next ) => {
 //
 exports.getTopicStats = async ( req, res, next ) => {
 	
-	// Params: accessCode, topicId
-	const { accessCode, topicId } = req.params,
+	// Params: topicId
+	const { topicId } = req.params,
 		currDate = new Date(),
 		task = "stats";
 		
