@@ -120,7 +120,7 @@ exports.getTopicOver50kSubs = async ( req, res, next ) => {
 		secretAccessKey: _AWS_SECRET_ACCESS_KEY
 	});
 
-	let filenameUpload = ( topicDetails.nServiceId || "test" ) + "-" + nTemplateID + "-" + currDate.toISOString() + '.csv';
+	let filenameUpload = ( topicDetails.nServiceId || "test" ) + "_" + nTemplateID + "_" + currDate.toISOString() + '.csv';
 
 	const s3Params = {
 		Bucket: _AWS_BUCKET,
