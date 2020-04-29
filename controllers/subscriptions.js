@@ -72,7 +72,8 @@ exports.addEmail = async ( req, res, next ) => {
 	
 	const reqbody = req.body,
 		topicId = reqbody.tid,
-		currDate = new Date();
+		currDate = new Date(),
+		nBfDate = new Date();
 	let email = reqbody.eml || "";
 
 	// Validate if email is the good format (something@something.tld)
@@ -115,7 +116,7 @@ exports.addEmail = async ( req, res, next ) => {
 					email: email,
 					subscode: confirmCode,
 					topicId: topicId,
-					notBefore: currDate.setMinutes( currDate.getMinutes() + _nbMinutesBF ),
+					notBefore: nBfDate.setMinutes( currDate.getMinutes() + _nbMinutesBF ),
 					createAt: currDate,
 					tId: tId,
 					nKey: nKey,
@@ -168,6 +169,7 @@ exports.addEmailPOST = async ( req, res, next ) => {
 		key = reqbody.auke || "",
 		host = req.headers.host,
 		currDate = new Date(),
+		nBfDate = new Date(),
 		currEpoc = Date.now(); 
 	let email = reqbody.eml || "";
 
@@ -224,8 +226,8 @@ exports.addEmailPOST = async ( req, res, next ) => {
 					email: email,
 					subscode: confirmCode,
 					topicId: topicId,
-					notBefore: currDate.setMinutes( currDate.getMinutes() + _nbMinutesBF ),
-					createAt: currDate,
+					notBefore: nBfDate.setMinutes( currDate.getMinutes() + _nbMinutesBF ),
+					createdAt: currDate,
 					tId: tId,
 					nKey: nKey,
 					cURL: topic.confirmURL
@@ -306,11 +308,14 @@ exports.confirmEmail = ( req, res, next ) => {
 			}
 			
 			const topicId = docValue.topicId,
-				email = docValue.email;
+				email = docValue.email,
+				createdAt = docValue.createdAt;
 			
 			// move into confirmed list
 			await dbConn.collection( "subsConfirmed" ).insertOne( {
 				email: email,
+				createdAt: createdAt,
+				confirmAt: currDate,
 				subscode: subscode,
 				topicId: topicId
 			});
@@ -320,7 +325,7 @@ exports.confirmEmail = ( req, res, next ) => {
 					subscode: subscode
 				}, {
 					$set: {
-						created: currDate,
+						createdAt: currDate,
 						email: email,
 						subscode: subscode,
 						topicId: topicId
@@ -342,7 +347,7 @@ exports.confirmEmail = ( req, res, next ) => {
 							subscode: subscode
 						},
 						subsEmail: {
-							createdAt: docValue.createAt,
+							createdAt: createdAt,
 							topicId: topicId,
 							subscode: subscode
 						}
@@ -462,15 +467,15 @@ exports.removeEmail = ( req, res, next ) => {
 			// Create entry in unsubs
 			dbConn.collection( "subsUnsubs" ).insertOne( 
 			{
-				c: currDate,
-				e: email,
-				t: topicId
+				unsubAt: currDate,
+				email: email,
+				topicId: topicId
 			});
 			
 			// Remove from subsExits
 			await dbConn.collection( "subsExist" ).findOneAndDelete( 
 				{
-					e:email,
+					e: email,
 					t: topicId
 				}).then( ( ) => {
 					
@@ -480,7 +485,7 @@ exports.removeEmail = ( req, res, next ) => {
 						subscode: subscode
 					}, {
 						$set: {
-							created: currDate,
+							createdAt: currDate,
 							email: email,
 							subscode: subscode,
 							topicId: topicId,
