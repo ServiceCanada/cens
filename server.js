@@ -67,6 +67,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	 */
 	const subsController = require('./controllers/subscriptions');
 	const managersController = require('./controllers/managers');
+	const smtpController = require('./controllers/sendsmtp');
 
 	
 
@@ -137,7 +138,9 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	app.get('/api/v0.1/t-manager/:topicId/:prefix/:suffix/test/addJSON',
 		subsController.simulateAddJSON);
 	app.get('/api/v0.1/t-manager/:topicId/:prefix/:suffix/test/addPost',
-		subsController.simulateAddPost );
+		subsController.simulateAddPost);
+	app.get('/api/v0.1/t-manager/:topicId/test/sendsmtpPOST',
+		smtpController.testsendMailPOST);
 
 	/**
 	 * Admin routes.
@@ -145,7 +148,16 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	// app.get('/subs/remove_unconfirm/:subscode/:email', subsController.removeUnconfirmEmail);
 	app.get('/api/v0.1/t-manager/:accessCode/:topicId/flush-cache',
 		passport.authenticate('basic', { session: false }),
+		smtpController.flushCache,
 		subsController.flushCache);
+	
+	/**
+	 * SMTP Mail routes.
+	 */
+	app.get('/api/v0.1/eml/postkey', smtpController.getKey);
+	app.post('/eml/send',
+		bodyParser.urlencoded({extended:false, limit: '10kb'}),
+		smtpController.sendMailPOST);
 
 	/**
 	 * Error Handler.
