@@ -380,7 +380,7 @@ getFormToUploadList = ( topicId, url ) => {
 			'</head>\n' +
 			'<body>\n' +
 			'	<h1>Download 50k+ subscriber</h1>\n' +
-			'<form action="' + url + '" method="post">\n' +
+			'<form action="list" method="post">\n' +
 			'	<p>Please provide the <strong>Notify template ID</strong> to use for your mailing.\n' +
 			'	<label>Notify Template ID: <input type="text" name="notifyTmplId" /></label>\n' +
 			'	<button type="submit">Submit</button>\n' +
