@@ -532,6 +532,7 @@ exports.flushCache = ( req, res, next ) => {
 		
 		console.log( "flushCache: noauth" );
 		res.json( _sErrorsJSO );
+		return;
 	}
 	
 	// Flush topic
