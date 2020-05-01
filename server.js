@@ -148,7 +148,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	// app.get('/subs/remove_unconfirm/:subscode/:email', subsController.removeUnconfirmEmail);
 	app.get('/api/v0.1/t-manager/:accessCode/:topicId/flush-cache',
 		passport.authenticate('basic', { session: false }),
-		smtpController.flushCache,
+		smtpController.flushCacheSMTP,
 		subsController.flushCache);
 	
 	/**

@@ -34,7 +34,7 @@ let topicCached = [],
 //
 exports.getKey = ( req, res, next ) => {
 	
-	res.json( generateKey() );
+	res.json( generateKeySMTP() );
 };
 
 //
@@ -42,7 +42,7 @@ exports.getKey = ( req, res, next ) => {
 //
 // @return; a JSO containing valid key 
 //
-generateKey = () => {
+generateKeySMTP = () => {
 	let currDate = Date.now();
 	currDate = currDate + (24 * 60 * 60 * 1000);
 
@@ -78,7 +78,7 @@ exports.sendMailPOST = async ( req, res, next ) => {
 	}
 	
 	// Get the topic
-	const topic = await getTopic( topicId );	
+	const topic = await getTopicSMTP( topicId );	
 	
 	try {
 		const timestamp = currDate,
@@ -156,7 +156,7 @@ exports.sendMailPOST = async ( req, res, next ) => {
 //
 // @return; an HTML blob
 //
-exports.flushCache = ( req, res, next ) => {
+exports.flushCacheSMTP = ( req, res, next ) => {
 	
 	const { accessCode, topicId } = req.params;
 	
@@ -182,7 +182,7 @@ exports.flushCache = ( req, res, next ) => {
 //
 // Get topic info
 //
-getTopic = ( topicId ) => {
+getTopicSMTP = ( topicId ) => {
 	
 	let topic = topicCached[ topicId ];
 	
@@ -230,7 +230,7 @@ exports.testsendMailPOST = ( req, res, next ) => {
 
 	// You must run the getKey function if key is outdated or inexistent
 	const { topicId } = req.params,
-		key = generateKey();
+		key = generateKeySMTP();
 	
 	// Form is hardcoded for Was this page helpful use case
 	res.status( 200 ).send( '<!DOCTYPE html>\n' +
