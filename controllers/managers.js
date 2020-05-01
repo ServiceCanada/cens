@@ -18,8 +18,8 @@ const _unsubBaseURL = process.env.removeURL || "https://apps.canada.ca/x-notify/
 	_minBeforeToUploadOnly = process.env.minBeforeToUploadOnly || 50000,
 	_AWS_ACCESS_KEY = process.env.AWS_ACCESS_KEY || false,
 	_AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY || false;
-	_AWS_BUCKET = process.env.AWS_BUCKET || 'notify-csv-dump';
-
+	_AWS_BUCKET = process.env.AWS_BUCKET || 'notify-csv-dump',
+	_subsLinkSuffix = process.env.subsLinkSuffix || "853e0212b92a127";
 
 //
 // get subscription for a topic
@@ -359,7 +359,7 @@ getConfirmedSubscriberAsCSV = async ( topicId ) => {
 			cached_code = ( i_cache.subscode.length ? i_cache.subscode : i_cache.subscode.toHexString() ); 
 		}
 		
-		csv += '"' + i_cache.email + '","' + _unsubBaseURL + cached_code + '"\r\n';
+		csv += '"' + i_cache.email + '","' + _unsubBaseURL + cached_code + "/" + _subsLinkSuffix + '"\r\n';
 	}
 	
 	return {

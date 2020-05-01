@@ -29,7 +29,8 @@ const processEnv = process.env,
 	_notifyCacheLimit = processEnv.notifyCacheLimit || 40,
 	_flushAccessCode = processEnv.flushAccessCode,
 	_flushAccessCode2 = processEnv.flushAccessCode2,
-	_notifyUsTimeLimit = processEnv.notifyUsTimeLimit || 180000;
+	_notifyUsTimeLimit = processEnv.notifyUsTimeLimit || 180000,
+	_subsLinkSuffix = processEnv.subsLinkSuffix || "853e0212b92a127";
 
 let notifyCached = [],
 	notifyCachedIndexes = [],
@@ -279,7 +280,7 @@ exports.confirmEmail = ( req, res, next ) => {
 	
 	// If no email, ensure the subscode if longer than 9 character
 	// (conditional to support deprecated query where the email was included in the URL, can be removed after 60 days of it's deployment date)
-	if ( emlParam && subscode.length < 10 ) {
+	if ( emlParam && subscode.length < 10 && emlParam !== _subsLinkSuffix ) {
 		findQuery.email = emlParam;
 		subscode = new ObjectId();
 	} else {
@@ -288,12 +289,17 @@ exports.confirmEmail = ( req, res, next ) => {
 		} catch ( e ) {
 
 			// The subscode is invalid, check if it is our edge case
-			invalidEdgeCaseURL( req );
+			invalidEdgeCaseURL( req, true );
 			console.log( "confirmEmail: invalid subscode /" + subscode );
 			res.redirect( _errorPage );
 			return;
 		}
 		findQuery.subscode = subscode;
+		
+		// Check if EdgeCase, then just log it in Mongo only
+		if ( emlParam && emlParam !== _subsLinkSuffix ) {
+			invalidEdgeCaseURL( req, false );
+		}
 	}
 
 	dbConn.collection( "subsUnconfirmed" )
@@ -390,7 +396,7 @@ exports.removeEmail = ( req, res, next ) => {
 	
 	// If no email, ensure the subscode if longer than 9 character
 	// (conditional to support deprecated query where the email was included in the URL, can be removed after 60 days of it's deployment date)
-	if ( emlParam && subscode.length < 10 ) {
+	if ( emlParam && subscode.length < 10 && emlParam !== _subsLinkSuffix ) {
 		findQuery.email = emlParam;
 	} else {
 		try {
@@ -398,13 +404,18 @@ exports.removeEmail = ( req, res, next ) => {
 		} catch ( e ) {
 
 			// The subscode is invalid, check if it is our edge case
-			invalidEdgeCaseURL( req );
+			invalidEdgeCaseURL( req, true );
 			console.log( "removeEmail: invalid subscode /" + subscode );
 			res.redirect( _errorPage );
 			return;
 		}
 
 		findQuery.subscode = subscode;
+		
+		// Check if EdgeCase, then just log it in Mongo only
+		if ( emlParam && emlParam !== _subsLinkSuffix ) {
+			invalidEdgeCaseURL( req, false );
+		}
 	}
 	
 	// findOneAndDeleted in subsConfirmedEmail document
@@ -694,7 +705,7 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 	
 	!_bypassSubscode && notifyClient.sendEmail( templateId, email, 
 		{
-			personalisation: { confirm_link: _confirmBaseURL + codeURL },
+			personalisation: { confirm_link: _confirmBaseURL + codeURL + "/" + _subsLinkSuffix },
 			reference: "x-notify_subs_confirm"
 		})
 		.catch( ( e ) => {
@@ -764,11 +775,12 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 				//
 				if ( _notifyUsNotBeforeTimeLimit <= currDateTime ) {
 
-					emailLetUsKnow( "429 Too Many Request error", {
+					letUsKnow( "429 Too Many Request error", {
 							type: "ratelimit",
 							currTime: currDateTime,
 							lastTime: _notifyUsNotBeforeTimeLimit
-						} );
+						},
+						true );
 
 					// Readjust the limit for the next period
 					_notifyUsNotBeforeTimeLimit = currDateTime + _notifyUsTimeLimit;
@@ -848,7 +860,7 @@ getTopic = ( topicId ) => {
 //
 // Function to let us know (admin) when some special situation happen
 //
-emailLetUsKnow = ( msg, logData ) => {
+letUsKnow = ( msg, logData, emailUs ) => {
 
 	const currDate = new Date();	
 
@@ -867,7 +879,7 @@ emailLetUsKnow = ( msg, logData ) => {
 			details: msg
 		}
 	).catch( (e) => {
-		console.log( "emailLetUsKnow: notify_letUsKnow_logs: " + logData.type + " :: " + currDate );
+		console.log( "letUsKnow: notify_letUsKnow_logs: " + logData.type + " :: " + currDate );
 		console.log( logData );
 		console.log( e );
 	});
@@ -875,27 +887,28 @@ emailLetUsKnow = ( msg, logData ) => {
 	//
 	// Send the email
 	//
-	let ourNotifyClient = new NotifyClient( processEnv.OUR_NOTIFY_END_POINT, processEnv.OUR_NOTIFY_KEY );
-	let email_to = JSON.parse( processEnv.OUR_NOTIFY_SEND_EMAIL_TO || "[]" );
-	email_to.forEach( ( emailGOC ) => {
+	if ( emailUs ) {
+		let ourNotifyClient = new NotifyClient( processEnv.OUR_NOTIFY_END_POINT, processEnv.OUR_NOTIFY_KEY );
+		let email_to = JSON.parse( processEnv.OUR_NOTIFY_SEND_EMAIL_TO || "[]" );
+		email_to.forEach( ( emailGOC ) => {
 
-		ourNotifyClient.sendEmail( processEnv.OUR_NOTIFY_TEMPLATE_ID, emailGOC,
-			{
-				personalisation: { msg: msg },
-				reference: "x-notify"
-			})
-			.catch( ( e ) => {
-				console.log( "emailLetUsKnow: notifying_us: " + logData.type + " :: " + currDate );
-				console.log( e );
-			});
-	});
-
+			ourNotifyClient.sendEmail( processEnv.OUR_NOTIFY_TEMPLATE_ID, emailGOC,
+				{
+					personalisation: { msg: msg },
+					reference: "x-notify"
+				})
+				.catch( ( e ) => {
+					console.log( "letUsKnow: notifying_us: " + logData.type + " :: " + currDate );
+					console.log( e );
+				});
+		});
+	}
 }
 
 //
 // Edge case - Confirm and Unsub URL cutted and base64 encoded
 //
-invalidEdgeCaseURL = ( req ) => {
+invalidEdgeCaseURL = ( req, emailUs ) => {
 	
 	// Test procedure for Cut Base64 URL Edge Case 
 	//
@@ -934,17 +947,19 @@ invalidEdgeCaseURL = ( req ) => {
 	}
 
 	// Notify us and save it
-	emailLetUsKnow( "Invalid URL for: " + url + " ; " + decodedSegment, {
+	letUsKnow( "Invalid URL for: " + url + " ; " + decodedSegment, {
 			type: "invalidURL",
 			url: url,
 			lastSegment: lastSegment,
 			decoded: decodedSegment,
 			isEdgeCase: isEdgeCase,
 			httpHeaders: httpHeaders
-		} );
+		},
+		emailUs );
 
 	return isEdgeCase;
 }
+
 
 // Test add form
 //
