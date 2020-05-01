@@ -69,6 +69,8 @@ Setting for frequency of notifying us - all the following MUST be set:
 Note: We need to set the Service ID associated to the topic details (field: `nServiceId`) otherwise the file name will start with "test-". We can extract that number from the Notify API Key they have provided, it is `apikey.substring(apikey.length - 73, apikey.length - 37)`
 
 
+`subsLinkSuffix` Suffix buffer URL parameter for when we send confirm/remove link. Default: "853e0212b92a127"
+
 ## Collections
 
 topics
