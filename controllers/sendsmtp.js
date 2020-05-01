@@ -174,7 +174,6 @@ exports.flushCacheSMTP = ( req, res, next ) => {
 	
 	// Return success
 	console.log( "SMTP - flushCache: success" );
-	res.json( _successJSO );
 
 	next();
 };
