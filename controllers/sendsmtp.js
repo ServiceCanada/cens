@@ -108,39 +108,40 @@ exports.sendMailPOST = async ( req, res, next ) => {
 		}
 
 		// Map fields in template
-		const rendered = templater.render( topic.template, customFields ),
+		const renderedTxt = templater.render( topic.templateTxt, customFields ),
+			renderedHtml = templater.render( topic.templateHtml, customFields )
 			mailOptions = {
 				from: topic.from,
 				to: to,
 				subject: topic.subject,
-				text: rendered
+				text: renderedTxt,
+				html: renderedHtml
 			};
 
 		// Fire email and forget
-		transporter.sendMail( mailOptions, function( err, info ) {
-				if (err) {
-					console.log( "SMTP - sendMailPOST: sendEmail " + err );
-					
-					// emailErr_logs entry - this can be async
-					_devLog && dbConn.collection( "emailErr_logs" ).insertOne(
-						{
-							createdAt: currDate,
-							topic: topic.tid,
-							smtp: transporter,
-							to: to,
-							err: err
-						}
-					).catch( (e) => {
-						console.log( "SMTP - sendMail: emailErr_logs" );
-						console.log( e );
-					});
-					
-					res.redirect( topic.failURL );
-				}
+		transporter.sendMail( mailOptions ).then( function( info ) {
 				res.redirect( topic.thankURL );
-			}
-		);
+		} )
+		.catch( function( err ) {
+			console.log( "SMTP - sendMailPOST: sendEmail " + err );
+					
+			// emailErr_logs entry - this can be async
+			_devLog && dbConn.collection( "emailErr_logs" ).insertOne(
+				{
+					createdAt: currDate,
+					topic: topic.tid,
+					smtp: transporter,
+					to: to,
+					err: err
+				}
+			)
+			.catch( (e) => {
+				console.log( "SMTP - sendMail: emailErr_logs" );
+				console.log( e );
+			} );
 
+			res.redirect( topic.failURL );
+		} );
 	} catch ( e ) { 
 
 		console.log( "SMTP - sendMailPOST" );
@@ -148,7 +149,6 @@ exports.sendMailPOST = async ( req, res, next ) => {
 
 		res.redirect( topic.failURL );
 	}
-
 };
 
 //
@@ -191,7 +191,8 @@ getTopicSMTP = ( topicId ) => {
 			{ _id: topicId },
 			{ projection: {
 					_id: 1,
-					template: 1,
+					templateTxt: 1,
+					templateHtml: 1,
 					from: 1,
 					to: 1,
 					subject: 1,

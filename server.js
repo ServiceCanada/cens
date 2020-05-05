@@ -5,6 +5,7 @@
 
 const express = require('express'); // HTTP server
 const compression = require('compression'); // gzip for the HTTP body
+const cors = require('cors'); // CORS
 
 const logger = require('morgan'); // HTTP request logger
 
@@ -23,6 +24,8 @@ const bodyParser = require('body-parser');
 const MongoClient = require('mongodb').MongoClient;
 
 const processEnv = process.env;
+
+const _corsSettings = JSON.parse(processEnv.cors || '{"optionSucessStatus":200}');
 
 /**
  * Load environment variables from .env file, where API keys and passwords are configured.
@@ -156,6 +159,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	 */
 	app.get('/api/v0.1/eml/postkey', smtpController.getKey);
 	app.post('/eml/send',
+		cors(_corsSettings),
 		bodyParser.urlencoded({extended:false, limit: '10kb'}),
 		smtpController.sendMailPOST);
 

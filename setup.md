@@ -10,6 +10,7 @@ Server will run at `0.0.0.0:8080` by default.
 
 ## Environment variables
 
+`cors` Set up CORS headers, method and origin for specific endpoints.
 `errorPage` URL to redirect when error occur, like invalid link. Default: https://canada.ca
 `confirmBaseURL` Base URL to follow in order to confirm the validity of an email address for a given topic. Default: `https://apps.canada.ca/x-notify/subs/confirm/`
 `removeURL` Base URL to follow in order to unsubscribe from a topic. Default: `https://apps.canada.ca/x-notify/subs/remove/`
@@ -79,7 +80,8 @@ topics
 	notifyKey: Notify Key
 	confirmURL: Confirmation URL
 	unsubURL: Unsubscription URL
-	template: Mustache template for the email (SMTP only),
+	templateTxt: Mustache template for the email text version (SMTP only),
+	templateHtml: Mustache template for the email HTML version (SMTP only),
 	from: Email address from (SMTP only),
 	to: Email address to (SMTP only),
 	subject: Subject of email (SMTP only),
