@@ -25,8 +25,6 @@ const MongoClient = require('mongodb').MongoClient;
 
 const processEnv = process.env;
 
-const _corsSettings = JSON.parse(processEnv.cors || '{"optionSucessStatus":200}');
-
 /**
  * Load environment variables from .env file, where API keys and passwords are configured.
  */
@@ -34,6 +32,7 @@ dotenv.config({
     path: '.env'
 });
 
+const _corsSettings = JSON.parse(processEnv.cors || '{"optionSucessStatus":200}');	// Parse CORS settings
 
 // 
 // HTTP auth
