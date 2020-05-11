@@ -10,10 +10,17 @@
 // SIDE NOTE:   data change
    **************************
 subsUnconfirmed
-- Renamed createAt => createdAt
+- Renamed createAt => createdAt => WriteResult({ "nMatched" : 6372, "nUpserted" : 0, "nModified" : 5330 })
 
 subsRecents
-- Renamed created => createdAt
+- Renamed created => createdAt => WriteResult({ "nMatched" : 7014, "nUpserted" : 0, "nModified" : 3597 })
+//rename all documents in collection
+db.getCollection("subsRecents").update(
+    {},
+    { $rename: { "created": "createdAt" } },
+    { multi: true }
+)
+
 
 subsUnsubs (will be done by the script bellow)
 - Rename c => unsubAt
@@ -115,12 +122,19 @@ async function confirmed() {
 	const logs = await dbConn.collection( "subs_logs" ).findOne( { _id: value.email } );
 	
 	// Get the date
-	const createdAt = await getCreatedAtDateForTopic( value.topicId, logs.subsEmail );
+	let createdAt = await getCreatedAtDateForTopic( value.topicId, logs.subsEmail );
 	const confirmAt = await getCreatedAtDateForTopic( value.topicId, logs.confirmEmail );
 	
 	// Remove 25 min of the createAt date (was added by mistake)
-	createdAt.setMinutes( createdAt.getMinutes() - 25 );
-	
+	// If createdAt is not null
+	if ( createdAt ) {
+		createdAt.setMinutes( createdAt.getMinutes() - 25 );
+	} else {
+
+		// use the createdAt of the logs, during the switch of the terminology, we didn't recorded properly the created date
+		createdAt = logs.createdAt;
+	}
+
 	// Update the subsConfirmed
 	dbConn.collection( "subsConfirmed" ).findOneAndUpdate(
 		{
@@ -155,38 +169,63 @@ async function unsub() {
 		return true; // skip this one
 	}
 
+	let email = value.e || value.email,
+		topicId = value.t || value.topicId;
+
 	// Get the corresponding subsLog
-	const logs = await dbConn.collection( "subs_logs" ).findOne( { _id: value.e } );
+	const logs = await dbConn.collection( "subs_logs" ).findOne( { _id: email } );
 
 	// Get the date
-	const createdAt = await getCreatedAtDateForTopic( value.t, logs.subsEmail );
-	const confirmAt = await getCreatedAtDateForTopic( value.t, logs.confirmEmail );
+	let createdAt = await getCreatedAtDateForTopic( topicId, logs.subsEmail );
+	const confirmAt = await getCreatedAtDateForTopic( topicId, logs.confirmEmail );
 
 	// Remove 25 min of the createAt date (was added by mistake)
-	createdAt.setMinutes( createdAt.getMinutes() - 25 );
+	// If createdAt is not null
+	if ( createdAt ) {
+		createdAt.setMinutes( createdAt.getMinutes() - 25 );
+	} else {
 
-	// Update the subsConfirmed
-	dbConn.collection( "subsUnsubs" ).findOneAndUpdate(
-		{
-			e: value.e,
-			t: value.t
-		},
-		{
-			$set: {
-				createdAt: createdAt,
-				confirmAt: confirmAt,
-				unsubAt: value.c,
-				email: value.e,
-				topicId: value.t
+		// use the createdAt of the logs, during the switch of the terminology, we didn't recorded properly the created date
+		createdAt = logs.createdAt;
+	}
+
+	if ( value.e ) {
+		// Update the subsConfirmed
+		dbConn.collection( "subsUnsubs" ).findOneAndUpdate(
+			{
+				e: email,
+				t: topicId
 			},
-			$unset: {
-				c: "",
-				e: "",
-				t: ""
+			{
+				$set: {
+					createdAt: createdAt,
+					confirmAt: confirmAt,
+					unsubAt: value.c,
+					email: value.e,
+					topicId: value.t
+				},
+				$unset: {
+					c: "",
+					e: "",
+					t: ""
+				}
 			}
-		}
-	);
-	
+		);
+	} else {
+		// Update the subsConfirmed
+		dbConn.collection( "subsUnsubs" ).findOneAndUpdate(
+			{
+				email: email,
+				topicId: topicId
+			},
+			{
+				$set: {
+					createdAt: createdAt,
+					confirmAt: confirmAt
+				}
+			}
+		);
+	}
 	return true;
 }
 

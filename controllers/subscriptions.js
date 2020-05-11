@@ -315,7 +315,7 @@ exports.confirmEmail = ( req, res, next ) => {
 			
 			const topicId = docValue.topicId,
 				email = docValue.email,
-				createdAt = docValue.createdAt;
+				createdAt = docValue.createdAt || docValue.createAt;
 			
 			// move into confirmed list
 			await dbConn.collection( "subsConfirmed" ).insertOne( {
@@ -478,6 +478,8 @@ exports.removeEmail = ( req, res, next ) => {
 			// Create entry in unsubs
 			dbConn.collection( "subsUnsubs" ).insertOne( 
 			{
+				createdAt: docValue.createdAt,
+				confirmAt: docValue.confirmAt,
 				unsubAt: currDate,
 				email: email,
 				topicId: topicId
