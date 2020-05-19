@@ -8,6 +8,10 @@
 
 Run bash script "load-run.sh" for load testing. More instructions in the file.
 
+## Start the application
+
+`node server.js`
+
 ## Create topic
 
 A topic could be compared to a mailing list.
