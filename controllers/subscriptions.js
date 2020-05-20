@@ -75,7 +75,7 @@ exports.addEmail = async ( req, res, next ) => {
 		topicId = reqbody.tid,
 		currDate = new Date(),
 		nBfDate = new Date();
-	let email = reqbody.eml || "";
+	let email = reqbody.eml.toLowerCase() || "";
 
 	// Validate if email is the good format (something@something.tld)
 	if ( !email.match( /.+\@.+\..+/ ) || !topicId ) {
@@ -139,6 +139,7 @@ exports.addEmail = async ( req, res, next ) => {
 			}).catch( ( ) => {
 			
 				// The email was either subscribed-pending or subscribed confirmed
+				console.log("The email was either subscribed-pending or subscribed confirmed");
 				resendEmailNotify( email, topicId, currDate );
 				res.json( _successJSO );
 			});
