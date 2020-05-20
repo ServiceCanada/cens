@@ -1,20 +1,24 @@
-version: '3'
+version: '3.8'
 services:
   mongo:
-    image: mongo:3.6
+    image: mongo:4.2
+    container_name: x-notify-mongo
+    ports:
+     - target: 27017
+       published: 27016
+       protocol: tcp
+       mode: host
     networks:
      - x-notify-net
   x-notify:
     build: ./
-    ports:
+    container_name: x-notify
+    ports: 
      - "8080:8080"
     restart: on-failure
-    container_name: x-notify
     environment:
      - MONGODB_URI=mongodb://mongo:27017/test
      - NODE_ENV=development
-    links:
-     - mongo
     depends_on:
      - mongo
     volumes:

@@ -5,7 +5,7 @@ ENV NODE_ENV=${NODE_ENV}
 
 WORKDIR ./
 
-COPY package*.json .
+COPY package*.json ./
 
 RUN npm install -g nodemon
 RUN npm install
