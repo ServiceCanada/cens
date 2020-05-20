@@ -1,6 +1,55 @@
 
 # Setup
 
+## Config setup
+
+Run the following commands under the project root:
+```
+$ cp .env.example .env
+$ vim .env
+```
+
+And modify the following variable, if needed
+* user - For auth for management task
+* password - For auth for management task
+* flushAccessCode - For auth to flush alls "Topics" keep in memory
+* flushAccessCode2 - For auth to flush alls "Topics" keep in memory
+* more for prod - All variable that start with "OUR_NOTIFY" - Those is to notify the dev team
+* more for prod - All variable that start with "CDS_NOTIFY" - Those is to let CDS know they need to send a 50k+ emails message
+* more for prod - All variable that start with "AWS_" - Those is the S3 upload bucket to save the 50k+ emails list 
+
+## Docker
+
+`docker-compose up --build`
+
+### URLs
+
+* Server: http://localhost:8080/
+* MongoDB external connector: http://localhost:27016/
+
+### Containers
+
+* x-notify-mongo (Mongo DB instance)
+* x-notify (Server)
+
+
+## First run
+
+You need:
+
+* In mongo: Create at least 1 topic
+	* See the docker exec command "First run" in [docker readme](docker/readme.md)
+* Setup one (1) email confirmation template with Notify (notification.alpha.canada.ca) - That template contains at least the personalisation `(( confirm_link ))`
+* Update the topic with the appropriate template ID and notify API key
+	* You can update by connecting to mongo via port 27016 or via command line in the docker container `x-notify-mongo`
+	* Example of mongo command: `db.topics.updateOne( { _id: "test" }, { $set: { templateId: "<Notify template id>", notifyKey: "<Your team only notify API key>" } } );`
+
+## Run locally
+
+Require
+* MongoDB 4.2.x
+* NodeJS
+
 * Create a `.env` and configure MONGODB_URI, user, password
 * `npm install`
 * `npm run start`

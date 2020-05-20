@@ -12,6 +12,11 @@ Run bash script "load-run.sh" for load testing. More instructions in the file.
 
 `node server.js`
 
+or
+
+`docker-compose up --build`
+
+
 ## Create topic
 
 A topic could be compared to a mailing list.
