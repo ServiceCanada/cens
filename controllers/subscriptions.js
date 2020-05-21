@@ -139,7 +139,6 @@ exports.addEmail = async ( req, res, next ) => {
 			}).catch( ( ) => {
 			
 				// The email was either subscribed-pending or subscribed confirmed
-				console.log("The email was either subscribed-pending or subscribed confirmed");
 				resendEmailNotify( email, topicId, currDate );
 				res.json( _successJSO );
 			});
