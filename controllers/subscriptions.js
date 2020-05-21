@@ -172,7 +172,7 @@ exports.addEmailPOST = async ( req, res, next ) => {
 		currDate = new Date(),
 		nBfDate = new Date(),
 		currEpoc = Date.now(); 
-	let email = reqbody.eml || "";
+	let email = reqbody.eml.toLowerCase() || "";
 
 	let keyBuffer = new Buffer(key, 'base64'),
 		keyDecrypt = keyBuffer.toString('ascii');
