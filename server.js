@@ -18,6 +18,8 @@ const chalk = require('chalk'); // To color message in console log
 const passport = require('passport'); // Authentication	 
 const BasicStrategy = require('passport-http').BasicStrategy;
 
+const jwt = require('jsonwebtoken'); // JWT Authentication
+
 const bodyParser = require('body-parser');
 //const crypto = require('crypto'); // To encrypt Notify keys
 
@@ -143,6 +145,9 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 		subsController.simulateAddPost);
 	app.get('/api/v0.1/t-manager/:topicId/test/sendsmtpPOST',
 		smtpController.testsendMailPOST);
+	app.post('/api/v0.1/t-manager/:topicId/confirmedSubscribers', 
+		verifyJWT,
+		managersController.getAllConfSubs);
 
 	/**
 	 * Admin routes.
@@ -161,6 +166,24 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 		cors(_corsSettings),
 		bodyParser.urlencoded({extended:false, limit: '10kb'}),
 		smtpController.sendMailPOST);
+
+	/**
+	 * JWT Authentication
+	 */
+	function verifyJWT(req, res, next){
+		var token = req.headers['authorization'].replace(/^bearer\s/i, '');
+		if (!token)
+			return res.status(403).send({ auth: false, message: 'No token provided.' });
+
+		jwt.verify(token, processEnv.SECRET, function(err, decoded){
+			if (err){
+				console.log('if(err) ' + err);
+				return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+			}
+
+			next();
+		});
+	}	
 
 	/**
 	 * Error Handler.
