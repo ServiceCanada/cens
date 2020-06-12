@@ -80,20 +80,20 @@ Brief list of what to create test for
 Subscribe
 
 ```
-curl -i -X POST -H 'Content-Type: application/json' -d '{"eml": "pierre.dubois@servicecanada.gc.ca", "tid": "test"}' http://192.168.1.205:8080/api/v0.1/subs/email/add
+curl -i -X POST -H 'Content-Type: application/json' -d '{"eml": "pierre@example.com", "tid": "test"}' http://127.0.0.1:8080/api/v0.1/subs/email/add
 ```
 
 Confirm
 
 ```
-curl -i -X GET http://192.168.1.205:8080/subs/confirm/652700768/pierre.dubois@servicecanada.gc.ca
+curl -i -X GET http://127.0.0.1:8080/subs/confirm/2d3903975209cbq2/87462102
 ```
 
 
 Unsubscribe
 
 ```
-curl -i -X GET http://192.168.1.205:8080/subs/remove/709931686/pierre.dubois@servicecanada.gc.ca
+curl -i -X GET http://192.168.1.205:8080/subs/remove/2d3903975209cbq2/87462102
 ```
 
 ## database command

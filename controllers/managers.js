@@ -3,7 +3,7 @@
  *
  * @description: Getting the subscription list and various bulk operation
  * @author: Government of Canada; @duboisp
- * @version: 0.1
+ * @version: 1.0
  ===========================*/
 
 const AWS = require('aws-sdk');
