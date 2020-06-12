@@ -115,6 +115,19 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	/**
 	 * Manager routes.
 	 */
+	app.get('/api/v0.1/t-manager/:accessCode/home',
+		passport.authenticate('basic', { session: false }),
+		managersController.serveHome);
+	app.post('/api/v0.1/t-manager/:accessCode/topic',
+		passport.authenticate('basic', { session: false }),
+		bodyParser.urlencoded({extended:false, limit: '10kb'}),
+		managersController.createTopic);
+	app.get('/api/v0.1/t-manager/:accessCode/:topicId',
+		passport.authenticate('basic', { session: false }),
+		managersController.getTopic);
+	app.put('/api/v0.1/t-manager/:accessCode/:topicId',
+		passport.authenticate('basic', { session: false }),
+		managersController.modifyTopic);
 	//app.param('/api/v0.1/t-manager/:code/:topic', managersController.validateCodeTopic);
 	app.get('/api/v0.1/t-manager/:accessCode/:topicId/list',
 		passport.authenticate('basic', { session: false }),
