@@ -175,7 +175,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 		if (!token)
 			return res.status(403).send({ auth: false, message: 'No token provided.' });
 
-		jwt.verify(token, processEnv.SECRET, function(err, decoded){
+		jwt.verify(token, processEnv.jwtSecretAllSubsForTopic, function(err, decoded){
 			if (err){
 				console.log('if(err) ' + err);
 				return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });

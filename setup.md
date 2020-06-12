@@ -120,6 +120,7 @@ Note: We need to set the Service ID associated to the topic details (field: `nSe
 
 
 `subsLinkSuffix` Suffix buffer URL parameter for when we send confirm/remove link. Default: "853e0212b92a127"
+`jwtSecretAllSubsForTopic` This is the secret key necessary for authentication via JWT to the confirmedSubscribers service
 
 ## Collections
 

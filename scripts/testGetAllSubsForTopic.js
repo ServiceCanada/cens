@@ -30,7 +30,7 @@ var myToken = jwt.sign(
 		iss: "testScript",
 		iat: Math.round(Date.now()/1000)
 	},
-	processEnv.SECRET,
+	processEnv.jwtSecretAllSubsForTopic,
 	{
 		header: {typ: "JWT", alg: "HS256"}
 	}
