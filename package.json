@@ -1,15 +1,16 @@
 {
   "name": "x-notify",
-  "version": "0.1.0",
-  "description": "Subscription to receive update via Notify",
+  "version": "1.0.0",
+  "description": "MVP subscription service to send email update via Notify from CDS. This MVP is going to be replaced by notification-dispatcher.",
   "repository": {
     "type": "git",
     "url": "https://github.com/ServiceCanada/x-notify"
   },
   "license": "MIT",
-  "author": "Pierre Dubois",
+  "author": "Government of Canada",
   "contributors": [
-    ""
+    "duboisp",
+    "GormFrank"
   ],
   "scripts": {
     "start": "nodemon -L server.js",

@@ -3,7 +3,7 @@
  *
  * @description: Have a simpler way of dealing with manipulations in the database
  * @author: Government of Canada; @duboisp; @GormFrank
- * @version: 0.1
+ * @version: 1.0
  *
  * addTopic
  * updateTopic

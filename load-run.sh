@@ -3,7 +3,7 @@
 START=1					#Number to start loop with
 END=3	 				#Number to stop at
 delay=0.001	 			#Delay in seconds
-IP="192.168.2.71"		#IP address to run load test on
+IP="127.0.0.1"		#IP address to run load test on
 topic="test2"			#Topic ID
 subscode="8yp45s-c0d3"	#Usually 8yp45s-c0d3, which is leet for bypass-code
 emailPrefix="bonjour"	#Email prefix that will have an incremented number appended to

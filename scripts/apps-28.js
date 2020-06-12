@@ -3,7 +3,7 @@
  *
  * @description: Script to add the createdAt to existing subscription
  * @author: Government of Canada; @duboisp
- * @version: 0.1
+ * @version: 1.0
  ===========================*/
 
 /* **************************

@@ -3,7 +3,7 @@
  *
  * @description: Managing the client subscription to be notified about a given topic
  * @author: Government of Canada; @duboisp
- * @version: 0.1
+ * @version: 1.0
  ===========================*/
 
 const NotifyClient = require('notifications-node-client').NotifyClient; // https://docs.notifications.service.gov.uk/node.html#node-js-client-documentation
@@ -15,7 +15,7 @@ const ObjectId = require('mongodb').ObjectId;
 
 const processEnv = process.env,
 	_devLog = !!!processEnv.prodNoLog,
-	_keySalt = processEnv.keySalt || "5417",
+	_keySalt = processEnv.keySalt || "salt",
 	_validHosts = JSON.parse(processEnv.validHosts || '["localhost:8080"]'),
 	_errorPage = processEnv.errorPage || "https://canada.ca",
 	_successJSO = processEnv.successJSO || { statusCode: 200, ok: 1 },

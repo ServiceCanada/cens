@@ -3,7 +3,7 @@
  *
  * @description: Send an email through SMTP about a given topic
  * @author: Government of Canada; @GormFrank
- * @version: 0.1
+ * @version: 1.0
  ===========================*/
 
 const nodemailer = require('nodemailer');
