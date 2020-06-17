@@ -629,16 +629,12 @@ exports.serveHome = ( req, res, next ) => {
 		'		<br>\n' +
 		'		<input type="submit" value="Create">\n' +
 		'	</form>\n' +
-		'	<p>\n' +
-		'	<form action="/api/v0.1/t-manager/' + accessCode + '/bulk/action" method="post">\n' +
-		'		<fieldset>\n' +  
-		'			<legend>Do you wish to subscribe or unsubscribe emails:</legend>\n' +   
-		'			<label><input name="action" type="radio" value="add"> Subscribe</label><br>\n' +
-		'			<label><input name="action" type="radio" value="remove"> Unsubscribe</label><br>\n' +
-		'		</fieldset><br><br>\n' + 
-		'		<label for="emails">List of emails to action (one email address per line):<br>\n' +
-		'		<textarea id="emails" name="emails" rows="25" cols="50" required></textarea><br>\n' +
-		'		<input type="submit" value="Submit">\n' +
+		'	<br/><p>\n' +
+		'	<form action="/api/v0.1/t-manager/' + accessCode + '/topic" method="get">\n' +
+		'		<h3>Find a topic</h3>\n' +
+		'		<label for"topicId">Topic Id:</label><br>\n' +	
+		'		<input type="text" id="topicId" name="topicId"><br><br>\n' +
+		'		<input type="submit" value="GET">\n' +
 		'	</form>\n' +
 		'</body>\n' +
 		'</html>' 
@@ -651,7 +647,6 @@ exports.createTopic = async ( req, res, next ) => {
 	// Params: accessCode
 	const accessCode = req.params.accessCode;
 
-	console.log(req.body);
 	dbConn.collection("topics").insertOne(
 		{
 			templateId: req.body.notifyTemplateId,
@@ -692,134 +687,237 @@ exports.getTopic = async ( req, res, next ) => {
 
 	let topicId = req.query.topicId;
 
-
 	let doc = await dbConn.collection( "topics" ).findOne(
 		{
 			_id: ObjectId(topicId)
 		}
-	);
+	).catch((err) => {
+		console.log("my error" + err);
+		return;
+	});
 
-console.log(doc);
-	
-	res.status( 200 ).send( '<!DOCTYPE html>\n' +
-		'<html lang="en">\n' +
-		'<head>\n' +
-		'<title>Topic Search Result</title>\n' +
-		'</head>\n' +
-		'<body>\n' +
-		'	<form action="/api/v0.1/t-manager/' + accessCode + '/' + topicId + '" method="PUT">\n' +
-		'		<h3>Update a topic</h3><br/>\n' +
-		'		<label for"put_topicId">Topic Id:</label><br>\n' +	
-		'		<input type="text" id="topicId" name="put_topicId" value="' + topicId + '"><br><br>\n' +
-		'		<label for"notifyAPIKey">Notify API Key:</label><br>\n' +	
-		'		<input type="text" id="notifyAPIKey" name="notifyAPIKey" value="' + doc.notifyKey + '"><br><br>\n' +
-		'		<label for"notifyTemplateId">Notify Template Id:</label><br>\n' +	
-		'		<input type="text" id="notifyTemplateId" name="notifyTemplateId" value="' + doc.templateId + '"><br><br>\n' +
-		'		<label for"confSubLink">Confirmation Subscription Link:</label><br>\n' +	
-		'		<input type="text" id="confSubLink" name="confSubLink" value="' + doc.confirmURL + '"><br><br>\n' +
-		'		<label for"confUnsubLink">Unsubscription Link:</label><br>\n' +	
-		'		<input type="text" id="confUnsubLink" name="confUnsubLink" value="' + doc.unsubURL + '"><br><br>\n' +
-		'		<label for"thankYouUrl">Thank you URL:</label><br>\n' +	
-		'		<input type="text" id="thankYouUrl" name="thankYouUrl" value="' + doc.thankURL + '"><br><br>\n' +
-		'		<label for"failureUrl">Server Error URL:</label><br>\n' +	
-		'		<input type="text" id="failureUrl" name="failureUrl" value="' + doc.thankURL + '"><br><br>\n' +
-		'		<label for"inputErrorUrl">Form Error URL:</label><br>\n' +	
-		'		<input type="text" id="inputErrorUrl" name="inputErrorUrl" value="' + doc.inputErrURL + '"><br><br>\n' +
-		'		<br>\n' +
-		'		<div>\n' +
-		'			<button name="update_topic">Modify</button>\n' +
-		'		</div>\n' +
-		'	</form>\n' +
-		'	<p>\n' +
-
-			'<script>\n' +
-			'	\n' +   		
-			'	var putMethod = ( event ) => {\n' +
-			'		// Prevent redirection of Form Click\n' +
-			'		event.preventDefault();\n' +
-			'		var target = event.target;\n' +
-			'		while ( target.tagName != "FORM" ) {\n' +
-			'			target = target.parentElement;\n' +
-			'		} // While the target is not te FORM tag, it looks for the parent element\n' +
-			'		\n' +
-			'		// The action attribute provides the request URL\n' +
-			'		var url = target.getAttribute( "action" );\n' +
-			'		\n' +
-			'		// Collect Form Data by prefix "put_" on name attribute\n' +
-			'		var bodyForm = target.querySelectorAll( "[name^=put_]");\n' +
-			'		var body = {};\n' +
-			'		bodyForm.forEach( element => {\n' +
-			'				// I used split to separate prefix from worth name attribute\n' +
-			'				var nameArray = element.getAttribute( "name" ).split( "_" );\n' +
-			'				var name = nameArray[ nameArray.length - 1 ];\n' +
-			'				\n' +
-			'				if ( element.tagName != "TEXTAREA" ) {\n' +
-			'					var value = element.getAttribute( "value" );\n' +
-			'				} else {\n' +
-			'					// if element is textarea, value attribute may return null or undefined\n' +
-			'					var value = element.innerHTML;\n' +
-			'				}\n' +
-			'				// all elements with name="put_*" has value registered in body object\n' +
-			'				body[ name ] = value;\n' +
-			'			}\n' +
-			'		);\n' +
-			'		var xhr = new XMLHttpRequest();\n' +
-			'		xhr.open( "PUT", url );\n' +
-			'		xhr.setRequestHeader( "Content-Type", "application/json" );\n' +
-			'		xhr.onload = () => {\n' +
-			'			if ( xhr.status === 200 ) {\n' +
-			'				// reload() uses cache, reload( true ) force no-cache. I reload the page to make "redirects normal effect" of HTML form when submit. You can manipulate DOM instead.\n' +
-			'				location.reload( true );\n' +
-			'			} else {\n' +
-			'				console.log( xhr.status, xhr.responseText );\n' +
-			'			}\n' +
-			'		}\n' +
-			'		xhr.send(JSON.stringify(body));\n' +
-			'	}\n' +
-			'	\n' +
-			'	var deleteMethod = ( event ) => {\n' +
-			'		event.preventDefault();\n' +
-			'		var confirm = window.confirm( "Certeza em deletar este conteúdo?" );\n' +
-			'		if ( confirm ) {\n' +
-			'		var target = event.target;\n' +
-			'		while ( target.tagName != "FORM" ) {\n' +
-			'		target = target.parentElement;\n' +
-			'		}\n' +
-			'		var url = target.getAttribute( "action" );\n' +
-			'		var xhr = new XMLHttpRequest();\n' +
-			'		xhr.open( "DELETE", url );\n' +
-			'		xhr.setRequestHeader( "Content-Type", "application/json" );\n' +
-			'		xhr.onload = () => {\n' +
-			'		if ( xhr.status === 200 ) {\n' +
-			'			location.reload( true );\n' +
-			'	       console.log( xhr.responseText );\n' +
-		        '		} else {\n' +
-			'		console.log( xhr.status, xhr.responseText );\n' +
-				'}\n' +
-			'}\n' +
-			'xhr.send();\n' +
-			'     }\n' +
-			'   }\n' +
-			'	document.querySelectorAll( "[name=update_topic], [name=delete_data]" ).forEach( element => {\n' +
-			'		var button = element;\n' +
-			'		var form = element;\n' +
-			'		while ( form.tagName != "FORM" ) {\n' +
-			'			form = form.parentElement;\n' +
-			'		}\n' +
-			'		var method = form.getAttribute( "method" );\n' +
-			'		if ( method == "PUT" ) {\n' +
-			'			button.addEventListener( "click", putMethod );\n' +
-			'		}\n' +
-		  	'	} );\n' +
-			'</script>\n' +
-		'</body>\n' +
-		'</html>' 
-	);
+	if(doc === null){
+		res.status( 200 ).send( '<!DOCTYPE html>\n' +
+			'<html lang="en">\n' +
+			'<head>\n' +
+			'	<title>Topic Not Found</title>\n' +
+			'</head>\n' +
+			'<body>\n' +
+			'	Unable to find topic\n' +
+			'	<p>\n' +
+			'	<form action="/api/v0.1/t-manager/' + accessCode + '/topic" method="get">\n' +
+			'		<label for"topicId">Topic Id:</label><br>\n' +	
+			'		<input type="text" id="topicId" name="topicId" required><br><br>\n' +
+			'		<input type="submit" value="GET">\n' +
+			'	</form>\n' +
+			'</body>\n' +
+			'</html>' 
+		);
+	}else{
+		res.status( 200 ).send( '<!DOCTYPE html>\n' +
+			'<html lang="en">\n' +
+			'<head>\n' +
+			'<title>Topic Search Result</title>\n' +
+			'</head>\n' +
+			'<body>\n' +
+			'	<form action="/api/v0.1/t-manager/' + accessCode + '/' + topicId + '" method="PUT">\n' +
+			'		<h3>Update a topic</h3><br/>\n' +
+			'		<label for"topicId">Topic Id:</label><br>\n' +	
+			'		<input type="text" id="topicId" name="put_topicId" value="' + topicId + '"><br><br>\n' +
+			'		<label for"notifyAPIKey">Notify API Key:</label><br>\n' +	
+			'		<input type="text" id="notifyAPIKey" name="put_notifyAPIKey" value="' + doc.notifyKey + '"><br><br>\n' +
+			'		<label for"notifyTemplateId">Notify Template Id:</label><br>\n' +	
+			'		<input type="text" id="notifyTemplateId" name="put_notifyTemplateId" value="' + doc.templateId + '"><br><br>\n' +
+			'		<label for"confSubLink">Confirmation Subscription Link:</label><br>\n' +	
+			'		<input type="text" id="confSubLink" name="put_confSubLink" value="' + doc.confirmURL + '"><br><br>\n' +
+			'		<label for"confUnsubLink">Unsubscription Link:</label><br>\n' +	
+			'		<input type="text" id="confUnsubLink" name="put_confUnsubLink" value="' + doc.unsubURL + '"><br><br>\n' +
+			'		<label for"thankYouUrl">Thank you URL:</label><br>\n' +	
+			'		<input type="text" id="thankYouUrl" name="put_thankYouUrl" value="' + doc.thankURL + '"><br><br>\n' +
+			'		<label for"failureUrl">Server Error URL:</label><br>\n' +	
+			'		<input type="text" id="failureUrl" name="put_failureUrl" value="' + doc.failURL + '"><br><br>\n' +
+			'		<label for"inputErrorUrl">Form Error URL:</label><br>\n' +	
+			'		<input type="text" id="inputErrorUrl" name="put_inputErrorUrl" value="' + doc.inputErrURL + '"><br><br>\n' +
+			'		<br>\n' +
+			'		<div>\n' +
+			'			<button name="update_topic">Modify</button>\n' +
+			'		</div>\n' +
+			'	</form>\n' +
+			'	<br/><br/><p>\n' +
+			'	<form action="/api/v0.1/t-manager/' + accessCode + '/' + topicId + '" method="DELETE">\n' +
+			'		<h3>Delete a Topic</h3><br/>\n' +
+			'		Delete the above topic entirely<br><br>\n' +
+			'		<button name="delete_topic">Delete</button>\n' +		
+				'</form>\n' +
+				'<script>\n' +
+				'	\n' +   		
+				'	var putMethod = ( event ) => {\n' +
+				'		// Prevent redirection of Form Click\n' +
+				'		event.preventDefault();\n' +
+				'		var target = event.target;\n' +
+				'		while ( target.tagName != "FORM" ) {\n' +
+				'			target = target.parentElement;\n' +
+				'		} // Find the FORM tag\n' +
+				'		\n' +
+				'		// Get the destination URL from FORM tag\n' +
+				'		var url = target.getAttribute( "action" );\n' +
+				'		\n' +
+				'		// Collect Form Data from prefix "put_" on name attribute\n' +
+				'		var bodyForm = target.querySelectorAll( "[name^=put_]");\n' +
+				'		var body = {};\n' +
+				'		bodyForm.forEach( element => {\n' +
+				'				// I used split to separate prefix from worth name attribute\n' +
+				'				var nameArray = element.getAttribute( "name" ).split( "_" );\n' +
+				'				var name = nameArray[ nameArray.length - 1 ];\n' +
+				'				\n' +
+				'				if ( element.tagName != "TEXTAREA" ) {\n' +
+				'					var value = element.value;\n' +
+				'				} else {\n' +
+				'					// if element is textarea, value attribute may return null or undefined\n' +
+				'					var value = element.innerHTML;\n' +
+				'				}\n' +
+				'				// all elements with name="put_*" has value registered in body object\n' +
+				'				body[ name ] = value;\n' +
+				'			}\n' +
+				'		);\n' +
+				'		var xhr = new XMLHttpRequest();\n' +
+				'		xhr.open( "PUT", url );\n' +
+				'		xhr.setRequestHeader( "Content-Type", "application/json" );\n' +
+				'		xhr.onload = () => {\n' +
+				'			if ( xhr.status === 200 ) {\n' +
+				'				var assignUrl = location.href.replace("topic?topicId=","").concat("/modSuccess");\n' +
+				'				location.assign(assignUrl);\n' +
+				'			} else {\n' +
+				'				console.log( xhr.status, xhr.responseText );\n' +
+				'			}\n' +
+				'		}\n' +
+				'		xhr.send(JSON.stringify(body));\n' +
+				'	}\n' +
+				'	\n' +
+				'	var deleteMethod = ( event ) => {\n' +
+				'		event.preventDefault();\n' +
+				'		var confirm = window.confirm( "Are you sure you want to permantly delete this topic?" );\n' +
+				'		if ( confirm ) {\n' +
+				'			var target = event.target;\n' +
+				'			while ( target.tagName != "FORM" ) {\n' +
+				'				target = target.parentElement;\n' +
+				'			}\n' +
+				'		}\n' +
+				'		var url = target.getAttribute( "action" );\n' +
+				'		var xhr = new XMLHttpRequest();\n' +
+				'		xhr.open( "DELETE", url );\n' +
+				'		xhr.setRequestHeader( "Content-Type", "application/json" );\n' +
+				'		xhr.onload = () => {\n' +
+				'			if ( xhr.status === 200 ) {\n' +
+				'				location.assign(url.concat("/deleteSuccess"));\n' +
+			        '			} else {\n' +
+				'				console.log( xhr.status, xhr.responseText );\n' +
+				'			}\n' +
+				'		}\n' +
+				'		xhr.send();\n' +
+				'	}\n\n' +
+				'	document.querySelectorAll( "[name=update_topic], [name=delete_topic]" ).forEach( element => {\n' +
+				'		var button = element;\n' +
+				'		var form = element;\n' +
+				'		while ( form.tagName != "FORM" ) {\n' +
+				'			form = form.parentElement;\n' +
+				'		}\n' +
+				'		var method = form.getAttribute( "method" );\n' +
+				'		if ( method == "PUT" ) {\n' +
+				'			button.addEventListener( "click", putMethod );\n' +
+				'		}else if( method ==  "DELETE"){\n' +
+				'			button.addEventListener( "click", deleteMethod);\n' +
+				'		}\n' +
+			  	'	} );\n' +
+				'</script>\n' +
+			'</body>\n' +
+			'</html>' 
+		);
+	}
 
 	res.end();
 };
 
 exports.modifyTopic = async ( req, res, next ) => {
+	
+	// Params: accessCode
+	const accessCode = req.params.accessCode;
+
+	let topicId = req.params.topicId,
+	    	body = req.body;
+
+	dbConn.collection("topics").findOneAndUpdate(
+		{
+			_id:ObjectId(topicId)
+		},
+		{
+			$set: {
+				templateId: body.notifyTemplateId,
+				notifyKey: body.notifyAPIKey,
+				confirmURL: body.confSubLink,
+				unsubURL: body.confUnsubLink,
+				thankURL: body.thankYouUrl,
+				failURL: body.failureUrl,
+				inputErrURL: body.inputErrorUrl
+			}
+		}
+	).catch( (error) => {
+		console.log(error);
+	});
+	
+console.log("Sending back 200 response");
+	res.status( 200 ).send();
+	res.end();
+	
+};
+
+exports.showModSuccess = ( req, res, next ) => {
+
+	// Params: accessCode
+	const accessCode = req.params.accessCode;
+
+	res.status( 200 ).send( '<!DOCTYPE html>\n' +
+		'<html lang="en">\n' +
+		'<head>\n' +
+		'<title>Topic Management Home</title>\n' +
+		'</head>\n' +
+		'<body>\n' +
+		'	<p>Thank you, ' + ' topic properties updated successfully.</p>\n' +
+		'	<p>\n' +
+		'	<form action="/api/v0.1/t-manager/' + accessCode + '/topic" method="get">\n' +
+		'		<label for"topicId">Topic Id:</label><br>\n' +	
+		'		<input type="text" id="topicId" name="topicId" required><br><br>\n' +
+		'		<input type="submit" value="GET">\n' +
+		'	</form>\n' +
+		'</body>\n' +
+		'</html>' 
+	);
+}
+
+exports.showDeleteSuccess = ( req, res, next ) => {
+
+	// Params: accessCode
+	const accessCode = req.params.accessCode;
+
+	res.status( 200 ).send( '<!DOCTYPE html>\n' +
+		'<html lang="en">\n' +
+		'<head>\n' +
+		'<title>Topic Management Home</title>\n' +
+		'</head>\n' +
+		'<body>\n' +
+		'	<p>Topic successfully deleted.</p>\n' +
+		'	<p>\n' +
+		'	<form action="/api/v0.1/t-manager/' + accessCode + '/topic" method="get">\n' +
+		'		<label for"topicId">Topic Id:</label><br>\n' +	
+		'		<input type="text" id="topicId" name="topicId" required><br><br>\n' +
+		'		<input type="submit" value="GET">\n' +
+		'	</form>\n' +
+		'</body>\n' +
+		'</html>' 
+	);
+}
+
+exports.deleteTopic = async ( req, res, next ) => {
 	
 	console.log(req.params);
 	console.log(req.body);
@@ -827,20 +925,18 @@ exports.modifyTopic = async ( req, res, next ) => {
 	// Params: accessCode
 	const accessCode = req.params.accessCode;
 
-	let topicId = req.params.topicId;
-	console.log(topicId);
+	let topicId = req.params.topicId,
+	    	body = req.body;
 
-
-/*	dbConn.collection("topics").insertOne(
+	dbConn.collection("topics").findOneAndDelete(
 		{
-			templateId: req.body.notifyTemplateId,
-			notifyKey: req.body.notifyAPIKey,
-			confirmURL: req.body.confSubLink,
-			unsubURL: req.body.confUnsubLink,
-			thankURL: req.body.thankYouUrl,
-			failURL: req.body.failureUrl,
-			inputErrURL: req.body.inputErrorUrl
-		},
+			_id:ObjectId(topicId)
+		}
 	).catch( (error) => {
-		console.log(error);*/
+		console.log(error);
+	});
+	
+	res.status( 200 ).send();
+	res.end();
+	
 };
