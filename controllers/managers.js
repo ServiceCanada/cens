@@ -11,7 +11,8 @@ const NotifyClient = require('notifications-node-client').NotifyClient;
 
 const dbConn = module.parent.exports.dbConn;
 const ObjectId = require('mongodb').ObjectId;
-
+const mustache = require('mustache');
+const fsPromises = require('fs').promises;
 
 const _unsubBaseURL = process.env.removeURL || "https://apps.canada.ca/x-notify/subs/remove/",
 	_convertSubCode = process.env.convertSubCode || false,
@@ -697,6 +698,15 @@ exports.getTopic = async ( req, res, next ) => {
 		return;
 	});
 
+	let topicDetails = await dbConn.collection( "topics_details" ).findOne(
+		{
+			_id: topicId
+		}
+	).catch((err) => {
+		console.log("my error" + err);
+		return;
+	});
+
 	if(doc === null){
 		res.status( 200 ).send( '<!DOCTYPE html>\n' +
 			'<html lang="en">\n' +
@@ -715,15 +725,29 @@ exports.getTopic = async ( req, res, next ) => {
 			'</html>' 
 		);
 	}else{
-		res.status( 200 ).send( '<!DOCTYPE html>\n' +
+		var topicDetailsTemplate = await fsPromises.readFile('views/topic_details.mustache', 'UTF-8');
+		topicDetailsTemplate = mustache.render(topicDetailsTemplate,
+							{
+								createdAt: topicDetails.createdAt,
+								lastUpdated: topicDetails.lastUpdated,
+								groupName: topicDetails.groupName,
+								description: topicDetails.description,
+								lang: topicDetails.lang,
+								langAlt: topicDetails.langAlt
+							}
+		);
+
+		var html ='<!DOCTYPE html>\n' +
 			'<html lang="en">\n' +
 			'<head>\n' +
 			'<title>Topic Search Result</title>\n' +
 			'</head>\n' +
 			'<body>\n' +
 			'	<form action="/api/v0.1/t-manager/' + accessCode + '/' + topicId + '" method="PUT">\n' +
-			'		<h3>Update a topic</h3><br/>\n' +
+			'		<h3>Update a topic</h3><br>\n' +
 			'		<label>Topic Id:&nbsp;&nbsp;' + topicId + '</label><br><br>\n' +	
+			'		<table>\n' +
+			'			<tr><td>\n' +
 			'		<label for"notifyAPIKey">Notify API Key:</label><br>\n' +	
 			'		<input type="text" id="notifyAPIKey" name="put_notifyAPIKey" value="' + doc.notifyKey + '"><br><br>\n' +
 			'		<label for"notifyTemplateId">Notify Template Id:</label><br>\n' +	
@@ -738,6 +762,12 @@ exports.getTopic = async ( req, res, next ) => {
 			'		<input type="text" id="failureUrl" name="put_failureUrl" value="' + doc.failURL + '"><br><br>\n' +
 			'		<label for"inputErrorUrl">Form Error URL:</label><br>\n' +	
 			'		<input type="text" id="inputErrorUrl" name="put_inputErrorUrl" value="' + doc.inputErrURL + '"><br><br>\n' +
+			'			</td>\n' +
+			'			<td>\n' +
+			'				<div id="topic_details">' + topicDetailsTemplate + '</div>\n' +
+			'			</td>\n' +
+			'			</tr>\n' +
+			'		</table>\n' + 
 			'		<br>\n' +
 			'		<div>\n' +
 			'			<button name="update_topic">Modify</button>\n' +
@@ -829,10 +859,11 @@ exports.getTopic = async ( req, res, next ) => {
 				'			button.addEventListener( "click", deleteMethod);\n' +
 				'		}\n' +
 			  	'	} );\n' +
+				'	\n' +
 				'</script>\n' +
 			'</body>\n' +
-			'</html>' 
-		);
+			'</html>' ;
+		res.status( 200 ).send(html);
 	}
 
 	res.end();
