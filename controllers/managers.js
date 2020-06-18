@@ -896,7 +896,25 @@ exports.modifyTopic = async ( req, res, next ) => {
 		console.log(error);
 	});
 	
-console.log("Sending back 200 response");
+	dbConn.collection("topics_details").findOneAndUpdate(
+		{
+			_id: topicId
+		},
+		{
+			$set: {
+				groupName: body.groupName,
+				description: body.description,
+				lang: body.lang,
+				langAlt: body.langAlt,
+			},
+			$currentDate: { 
+				lastUpdated: true
+			}
+		}
+	).catch( (error) => {
+		console.log(error);
+	});
+
 	res.status( 200 ).send();
 	res.end();
 	
