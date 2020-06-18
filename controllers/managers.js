@@ -422,6 +422,24 @@ exports.serveBulkForm = ( req, res, next ) => {
 	);
 };
 
+//
+// get all subscriptions for a topic
+//
+// @return; a CSV text response
+//
+exports.getAllConfSubs = async (req, res, next) =>{
+	let topicId = req.params.topicId,
+		currDate = new Date();
+	
+	// Get the CSV
+        const { csv, count } = await getConfirmedSubscriberAsCSV( topicId );
+ 
+	// Initiate a file download
+	res.setHeader( "Content-disposition", "attachment; filename=" + topicId + "-" + count + "-" + currDate.getTime() + ".csv" );
+	res.set( "Content-Type", "text/csv" );
+	res.status( 200 ).send( csv );
+	res.end();
+};
 
 //
 // Bulk action multiple emails to a topic (assume implicit consent)

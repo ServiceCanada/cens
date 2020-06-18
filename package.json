@@ -26,6 +26,7 @@
     "errorhandler": "^1.5.1",
     "express": "^4.17.1",
     "express-status-monitor": "^1.2.8",
+    "jsonwebtoken": "^8.5.1",
     "mongodb": "^3.5.5",
     "morgan": "^1.9.1",
     "mustache": "^4.0.1",
