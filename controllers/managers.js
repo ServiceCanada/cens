@@ -649,6 +649,7 @@ exports.createTopic = async ( req, res, next ) => {
 
 	dbConn.collection("topics").insertOne(
 		{
+			_id: req.body.topicId,
 			templateId: req.body.notifyTemplateId,
 			notifyKey: req.body.notifyAPIKey,
 			confirmURL: req.body.confSubLink,
@@ -689,7 +690,7 @@ exports.getTopic = async ( req, res, next ) => {
 
 	let doc = await dbConn.collection( "topics" ).findOne(
 		{
-			_id: ObjectId(topicId)
+			_id: topicId
 		}
 	).catch((err) => {
 		console.log("my error" + err);
@@ -722,8 +723,7 @@ exports.getTopic = async ( req, res, next ) => {
 			'<body>\n' +
 			'	<form action="/api/v0.1/t-manager/' + accessCode + '/' + topicId + '" method="PUT">\n' +
 			'		<h3>Update a topic</h3><br/>\n' +
-			'		<label for"topicId">Topic Id:</label><br>\n' +	
-			'		<input type="text" id="topicId" name="put_topicId" value="' + topicId + '"><br><br>\n' +
+			'		<label>Topic Id:&nbsp;&nbsp;' + topicId + '</label><br><br>\n' +	
 			'		<label for"notifyAPIKey">Notify API Key:</label><br>\n' +	
 			'		<input type="text" id="notifyAPIKey" name="put_notifyAPIKey" value="' + doc.notifyKey + '"><br><br>\n' +
 			'		<label for"notifyTemplateId">Notify Template Id:</label><br>\n' +	
@@ -848,7 +848,7 @@ exports.modifyTopic = async ( req, res, next ) => {
 
 	dbConn.collection("topics").findOneAndUpdate(
 		{
-			_id:ObjectId(topicId)
+			_id: topicId
 		},
 		{
 			$set: {
@@ -930,7 +930,7 @@ exports.deleteTopic = async ( req, res, next ) => {
 
 	dbConn.collection("topics").findOneAndDelete(
 		{
-			_id:ObjectId(topicId)
+			_id: topicId
 		}
 	).catch( (error) => {
 		console.log(error);
