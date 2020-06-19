@@ -618,8 +618,9 @@ exports.createTopic = async ( req, res, next ) => {
 
 	// Params: accessCode
 	const accessCode = req.params.accessCode;
+	var insertErr;
 
-	dbConn.collection("topics").insertOne(
+	await dbConn.collection("topics").insertOne(
 		{
 			_id: req.body.topicId,
 			templateId: req.body.notifyTemplateId,
@@ -628,11 +629,20 @@ exports.createTopic = async ( req, res, next ) => {
 			unsubURL: req.body.confUnsubLink,
 			thankURL: req.body.thankYouUrl,
 			failURL: req.body.failureUrl,
-			inputErrURL: req.body.inputErrorUrl
+			inputErrURL: req.body.inputErrorUrl,
+			templateTxt: req.body.templateTxt,
+			templateHtml: req.body.templateHtml,
+			from: req.body.from,
+			to: req.body.to,
+			subject: req.body.subject
 		}
 	).catch( (error) => {
-		console.log(error);
+		insertErr = error;
+		res.status(200).json({error: error.toString()});
 	});
+
+	if(insertErr!==undefined)
+		return;
 
 	dbConn.collection("topics_details").insertOne(
 		{
@@ -645,8 +655,12 @@ exports.createTopic = async ( req, res, next ) => {
 			langAlt: req.body.langAlt
 		}
 	).catch( (error) => {
-		console.log(error);
+		insertErr = error;
+		res.status(200).json({error: error.toString()});
 	});
+	
+	if(insertErr!==undefined)
+		return;
 
 	res.status( 200 ).send( '<!DOCTYPE html>\n' +
 		'<html lang="en">\n' +
@@ -664,7 +678,6 @@ exports.createTopic = async ( req, res, next ) => {
 		'</body>\n' +
 		'</html>' 
 	);
-
 };
 
 exports.getTopic = async ( req, res, next ) => {
