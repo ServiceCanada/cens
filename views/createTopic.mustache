@@ -4,7 +4,7 @@
 		<title>Topic Management Home</title> 
 	</head> 
 	<body> 
-		<form action="/api/v0.1/t-manager/{{accessCode}}/topic" method="post"> 
+		<form action="/api/v0.1/t-manager/{{accessCode}}/topic" method="post" id="createTopicForm"> 
 			<h3>Create a new topic</h3><br/> 
 			<label for"topicId">Topic Id:</label><br> 
 			<input type="text" id="topicId" name="topicId"><br><br> 
@@ -36,6 +36,22 @@
 						<label>langAlt:</label><br>
 						<input type="text" name="langAlt" value="langAlt value"><br><br>
 
+					</td>
+					<td>
+						<h3>SMPT Config</h3>
+						<fieldset>
+							<legend>Settings:</legend>
+							<label for="templateTxt">Mustache Template (text version)</label><br><br>
+							<textarea rows="4" cols="50" name="templateTxt" form="createTopicForm">Enter Mustache text here...</textarea><br><br>
+							<label for="templateHtml">Mustache Template (html version)</label><br><br>
+							<textarea rows="4" cols="50" name="templateHtml" form="createTopicForm">Enter Mustache html here...</textarea><br><br>
+							<label for="from">Email address from</label>
+							<input type="email" id="from" name="from"><br><br>
+							<label for="to">Email address to</label>
+							<input type="email" id="to" name="to"><br><br>
+							<label for="subject">Subject of email</label>
+							<input type="text" id="subject" name="subject"><br><br>
+						</fieldset>
 					</td>
 				</tr>
 			</table>
