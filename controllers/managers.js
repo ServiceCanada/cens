@@ -598,48 +598,19 @@ removeBulk = async ( emails, topicId ) => {
 };
 
 
-exports.serveHome = ( req, res, next ) => {
+exports.serveHome = async ( req, res, next ) => {
 
 	// Params: accessCode
 	const accessCode = req.params.accessCode;
 
-	res.status( 200 ).send( '<!DOCTYPE html>\n' +
-		'<html lang="en">\n' +
-		'<head>\n' +
-		'<title>Topic Management Home</title>\n' +
-		'</head>\n' +
-		'<body>\n' +
-		'	<form action="/api/v0.1/t-manager/' + accessCode + '/topic" method="post">\n' +
-		'		<h3>Create a new topic</h3><br/>\n' +
-		'		<label for"topicId">Topic Id:</label><br>\n' +	
-		'		<input type="text" id="topicId" name="topicId"><br><br>\n' +
-		'		<label for"notifyAPIKey">Notify API Key:</label><br>\n' +	
-		'		<input type="text" id="notifyAPIKey" name="notifyAPIKey"><br><br>\n' +
-		'		<label for"notifyTemplateId">Notify Template Id:</label><br>\n' +	
-		'		<input type="text" id="notifyTemplateId" name="notifyTemplateId" value="<template id available in the template in Notify>"><br><br>\n' +
-		'		<label for"confSubLink">Confirmation Subscription Link:</label><br>\n' +	
-		'		<input type="text" id="confSubLink" name="confSubLink" value="https://canada.ca/conf.html"><br><br>\n' +
-		'		<label for"confUnsubLink">Unsubscription Link:</label><br>\n' +	
-		'		<input type="text" id="confUnsubLink" name="confUnsubLink" value="https://canada.ca/unsub.html"><br><br>\n' +
-		'		<label for"thankYouUrl">Thank you URL:</label><br>\n' +	
-		'		<input type="text" id="thankYouUrl" name="thankYouUrl" value="https://canada.ca/thankyou.html"><br><br>\n' +
-		'		<label for"failureUrl">Server Error URL:</label><br>\n' +	
-		'		<input type="text" id="failureUrl" name="failureUrl" value="https://canada.ca/failure.html"><br><br>\n' +
-		'		<label for"inputErrorUrl">Form Error URL:</label><br>\n' +	
-		'		<input type="text" id="inputErrorUrl" name="inputErrorUrl" value="https://canada.ca/form-error.html"><br><br>\n' +
-		'		<br>\n' +
-		'		<input type="submit" value="Create">\n' +
-		'	</form>\n' +
-		'	<br/><p>\n' +
-		'	<form action="/api/v0.1/t-manager/' + accessCode + '/topic" method="get">\n' +
-		'		<h3>Find a topic</h3>\n' +
-		'		<label for"topicId">Topic Id:</label><br>\n' +	
-		'		<input type="text" id="topicId" name="topicId"><br><br>\n' +
-		'		<input type="submit" value="GET">\n' +
-		'	</form>\n' +
-		'</body>\n' +
-		'</html>' 
+	var createTemplate = await fsPromises.readFile('views/createTopic.mustache', 'UTF-8');
+	createTemplate = mustache.render(createTemplate,
+							{
+								accessCode: accessCode
+							}
 	);
+
+	res.status( 200 ).send(createTemplate);
 };
 
 
@@ -658,7 +629,21 @@ exports.createTopic = async ( req, res, next ) => {
 			thankURL: req.body.thankYouUrl,
 			failURL: req.body.failureUrl,
 			inputErrURL: req.body.inputErrorUrl
-		},
+		}
+	).catch( (error) => {
+		console.log(error);
+	});
+
+	dbConn.collection("topics_details").insertOne(
+		{
+			_id: req.body.topicId,
+			createdAt: new Date(),
+			lastUpdated: new Date(),
+			groupName: req.body.groupName,
+			description: req.body.description,
+			lang: req.body.lang,
+			langAlt: req.body.langAlt
+		}
 	).catch( (error) => {
 		console.log(error);
 	});
@@ -669,7 +654,7 @@ exports.createTopic = async ( req, res, next ) => {
 		'<title>Topic Management Home</title>\n' +
 		'</head>\n' +
 		'<body>\n' +
-		'	<p>Thank you, ' + ' topic created successfully.</p>\n' +
+		'	<p>Thank you, topic created successfully.</p>\n' +
 		'	<p>\n' +
 		'	<form action="/api/v0.1/t-manager/' + accessCode + '/topic" method="get">\n' +
 		'		<label for"topicId">Topic Id:</label><br>\n' +	
@@ -967,17 +952,20 @@ exports.showDeleteSuccess = ( req, res, next ) => {
 }
 
 exports.deleteTopic = async ( req, res, next ) => {
-	
-	console.log(req.params);
-	console.log(req.body);
-
 	// Params: accessCode
 	const accessCode = req.params.accessCode;
 
-	let topicId = req.params.topicId,
-	    	body = req.body;
+	let topicId = req.params.topicId;
 
 	dbConn.collection("topics").findOneAndDelete(
+		{
+			_id: topicId
+		}
+	).catch( (error) => {
+		console.log(error);
+	});
+	
+	dbConn.collection("topics_details").findOneAndDelete(
 		{
 			_id: topicId
 		}
