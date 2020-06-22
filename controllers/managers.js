@@ -604,9 +604,17 @@ exports.serveHome = async ( req, res, next ) => {
 	const accessCode = req.params.accessCode;
 
 	var createTemplate = await fsPromises.readFile('views/createTopic.mustache', 'UTF-8');
+	var smtpTemplate = await fsPromises.readFile('views/smtpConfig.mustache', 'UTF-8');
+
 	createTemplate = mustache.render(createTemplate,
 							{
-								accessCode: accessCode
+								accessCode: accessCode,
+								smtpConfig: mustache.render(smtpTemplate,
+														{
+															templateTxt: "Enter Mustache text here",
+															templateHtml: "Enter Mustache html here"
+														}
+											)
 							}
 	);
 
@@ -742,7 +750,7 @@ exports.getTopic = async ( req, res, next ) => {
 			'</head>\n' +
 			'<body>\n' +
 			'	<form action="/api/v0.1/t-manager/' + accessCode + '/' + topicId + '" method="PUT">\n' +
-			'		<h3>Update a topic</h3><br>\n' +
+			'		<h3>Update a Topic</h3><br>\n' +
 			'		<label>Topic Id:&nbsp;&nbsp;' + topicId + '</label><br><br>\n' +	
 			'		<table>\n' +
 			'			<tr><td>\n' +
