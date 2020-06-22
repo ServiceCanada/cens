@@ -820,14 +820,8 @@ exports.getTopic = async ( req, res, next ) => {
 				'				var nameArray = element.getAttribute( "name" ).split( "_" );\n' +
 				'				var name = nameArray[ nameArray.length - 1 ];\n' +
 				'				\n' +
-				'				if ( element.tagName != "TEXTAREA" ) {\n' +
-				'					var value = element.value;\n' +
-				'				} else {\n' +
-				'					// if element is textarea, value attribute may return null or undefined\n' +
-				'					var value = element.innerHTML;\n' +
-				'				}\n' +
 				'				// all elements with name="put_*" has value registered in body object\n' +
-				'				body[ name ] = value;\n' +
+				'				body[ name ] = element.value;\n' +
 				'			}\n' +
 				'		);\n' +
 				'		var xhr = new XMLHttpRequest();\n' +
@@ -909,7 +903,12 @@ exports.modifyTopic = async ( req, res, next ) => {
 				unsubURL: body.confUnsubLink,
 				thankURL: body.thankYouUrl,
 				failURL: body.failureUrl,
-				inputErrURL: body.inputErrorUrl
+				inputErrURL: body.inputErrorUrl,	
+				templateTxt: body.templateTxt,
+				templateHtml: body.templateHtml,
+				from: body.from,
+				to: body.to,
+				subject: body.subject
 			}
 		}
 	).catch( (error) => {
