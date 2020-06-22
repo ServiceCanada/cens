@@ -743,6 +743,17 @@ exports.getTopic = async ( req, res, next ) => {
 							}
 		);
 
+		var smtpConfigTemplate = await fsPromises.readFile('views/smtpConfig.mustache', 'UTF-8');
+		smtpConfigTemplate = mustache.render(smtpConfigTemplate,
+							{
+								templateTxt: doc.templateTxt,
+								templateHtml: doc.templateHtml,
+								emailFrom: doc.from,
+								emailTo: doc.to,
+								emailSubject: doc.subject
+							}
+		);
+
 		var html ='<!DOCTYPE html>\n' +
 			'<html lang="en">\n' +
 			'<head>\n' +
@@ -771,6 +782,9 @@ exports.getTopic = async ( req, res, next ) => {
 			'			</td>\n' +
 			'			<td>\n' +
 			'				<div id="topic_details">' + topicDetailsTemplate + '</div>\n' +
+			'			</td>\n' +
+			'			<td>\n' +
+			'				<div id="smtp_config">' + smtpConfigTemplate + '</div>\n' +
 			'			</td>\n' +
 			'			</tr>\n' +
 			'		</table>\n' + 
