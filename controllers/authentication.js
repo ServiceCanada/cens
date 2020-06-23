@@ -22,9 +22,7 @@
   };
   
   // get new instance of the client
- const vault = require("node-vault")(options);
-  
-
+ //const vault = require("node-vault");
  
  const processEnv = process.env,
      _devLog = !!!processEnv.prodNoLog,
@@ -54,7 +52,7 @@
      
 
 
-     
+    /*
       // init vault server
       vault.init({ secret_shares: 1, secret_threshold: 1 })
       .then( (result) => {
@@ -72,6 +70,7 @@
         .then( () => vault.read('secret/hello'))
         .then( () => vault.delete('secret/hello'))
         .catch(console.error);
+      */
       
  //
  // Get key
@@ -94,12 +93,10 @@
  //
  generateAuthenticationKey = () => {
  
-    /*return  axios.get("https://dog.ceo/api/breeds/list/all",
-    { headers: {'Content-Type': 'application/json'}}
-  )*/
+  
 
-    return  axios.get("http://0.0.0.0:8200/v1/auth/token/lookup-self",
-         { headers: {'X-Vault-Token': 's.FYNWqTDJQMTuCnNDscJEszFs'}}
+    /*return  axios.get("http://127.0.0.1:8200/v1/secret?help=1",
+         { headers: {'X-Vault-Token': 'root'}}
        )
        .then((response) => {
          console.log(response.data);
@@ -108,6 +105,22 @@
        }, (error) => {
          console.log(error);
        });
+*/
+      /// http://localhost:8200/v1/sys/seal-status
+      // https://dog.ceo/api/breeds/list/all
+      // http://172.18.0.1:8200/v1/sys/seal-status
+      return  axios.get("http://ec2-100-26-121-207.compute-1.amazonaws.com:8200/v1/sys/seal-status",
+       { headers: {'Content-Type': 'application/json'}}
+       )
+       .then((response) => {
+         console.log(response.data);
+         //console.log(response.status);
+         return response.data
+       }, (error) => {
+         console.log(error);
+       });
+   
+
  }
 
 

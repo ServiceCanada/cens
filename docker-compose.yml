@@ -28,4 +28,4 @@ services:
      - x-notify-net
 networks:
   x-notify-net:
-    driver: bridge
+

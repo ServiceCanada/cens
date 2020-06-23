@@ -1,0 +1,92 @@
+Step 1/9 : FROM node:12-slim
+ ---> 396c358d2c97
+Step 2/9 : ARG NODE_ENV=development
+ ---> Using cache
+ ---> ec22cd84ed28
+Step 3/9 : ENV NODE_ENV=${NODE_ENV}
+ ---> Using cache
+ ---> a0271bcb4eb4
+Step 4/9 : WORKDIR ./
+ ---> Using cache
+ ---> 55ddc83e254b
+Step 5/9 : COPY package*.json ./
+ ---> Using cache
+ ---> 6a097baab7ca
+Step 6/9 : RUN npm install -g nodemon
+ ---> Using cache
+ ---> 39f66d28de92
+Step 7/9 : RUN npm install
+ ---> Using cache
+ ---> 694037fbd2fb
+Step 8/9 : COPY . .
+ ---> ebfd24661b02
+Step 9/9 : CMD [ "npm", "start" ]
+ ---> Running in 5fce3a565b5c
+Removing intermediate container 5fce3a565b5c
+ ---> 5b3d136b188a
+
+Successfully built 5b3d136b188a
+Successfully tagged x-notify_x-notify:latest
+Attaching to 7d6425291c36_myvault, x-notify-mongo, x-notify
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.677+0000 I  CONTROL  [main] Automatically disabling TLS 1.0, to force-enable TLS 1.0 specify --sslDisabledProtocols 'none'
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.679+0000 W  ASIO     [main] No TransportLayer configured during NetworkInterface startup
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 I  CONTROL  [initandlisten] MongoDB starting : pid=1 port=27017 dbpath=/data/db 64-bit host=049c2b5cf7e7
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 I  CONTROL  [initandlisten] db version v4.2.6
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 I  CONTROL  [initandlisten] git version: 20364840b8f1af16917e4c23c1b5f5efd8b352f8
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 I  CONTROL  [initandlisten] OpenSSL version: OpenSSL 1.1.1  11 Sep 2018
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 I  CONTROL  [initandlisten] allocator: tcmalloc
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 I  CONTROL  [initandlisten] modules: none
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 I  CONTROL  [initandlisten] build environment:
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 I  CONTROL  [initandlisten]     distmod: ubuntu1804
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 I  CONTROL  [initandlisten]     distarch: x86_64
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 I  CONTROL  [initandlisten]     target_arch: x86_64
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 I  CONTROL  [initandlisten] options: { net: { bindIp: "*" } }
+[36m7d6425291c36_myvault |[0m error loading configuration from /vault/config/vault.json: stat /vault/config/vault.json: no such file or directory
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 W  STORAGE  [initandlisten] Detected unclean shutdown - /data/db/mongod.lock is not empty.
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 I  STORAGE  [initandlisten] Detected data files in /data/db created by the 'wiredTiger' storage engine, so setting the active storage engine to 'wiredTiger'.
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 W  STORAGE  [initandlisten] Recovering data from the last clean checkpoint.
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 I  STORAGE  [initandlisten] 
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 I  STORAGE  [initandlisten] ** WARNING: Using the XFS filesystem is strongly recommended with the WiredTiger storage engine
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 I  STORAGE  [initandlisten] **          See http://dochub.mongodb.org/core/prodnotes-filesystem
+[32mx-notify-mongo |[0m 2020-06-18T20:37:41.680+0000 I  STORAGE  [initandlisten] wiredtiger_open config: create,cache_size=483M,cache_overflow=(file_max=0M),session_max=33000,eviction=(threads_min=4,threads_max=4),config_base=false,statistics=(fast),log=(enabled=true,archive=true,path=journal,compressor=snappy),file_manager=(close_idle_time=100000,close_scan_interval=10,close_handle_minimum=250),statistics_log=(wait=0),verbose=[recovery_progress,checkpoint_progress],
+[36m7d6425291c36_myvault exited with code 1
+[0m[32mx-notify-mongo |[0m 2020-06-18T20:37:42.184+0000 I  STORAGE  [initandlisten] WiredTiger message [1592512662:184002][1:0x7ff742105b00], txn-recover: Recovering log 53 through 54
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.225+0000 I  STORAGE  [initandlisten] WiredTiger message [1592512662:225435][1:0x7ff742105b00], txn-recover: Recovering log 54 through 54
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.298+0000 I  STORAGE  [initandlisten] WiredTiger message [1592512662:298325][1:0x7ff742105b00], txn-recover: Main recovery loop: starting at 53/3200 to 54/256
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.298+0000 I  STORAGE  [initandlisten] WiredTiger message [1592512662:298852][1:0x7ff742105b00], txn-recover: Recovering log 53 through 54
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.357+0000 I  STORAGE  [initandlisten] WiredTiger message [1592512662:357637][1:0x7ff742105b00], file:sizeStorer.wt, txn-recover: Recovering log 54 through 54
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.397+0000 I  STORAGE  [initandlisten] WiredTiger message [1592512662:397326][1:0x7ff742105b00], file:sizeStorer.wt, txn-recover: Set global recovery timestamp: (0, 0)
+[33mx-notify    |[0m 
+[33mx-notify    |[0m > x-notify@1.0.0 start /
+[33mx-notify    |[0m > nodemon -L server.js
+[33mx-notify    |[0m 
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.476+0000 I  RECOVERY [initandlisten] WiredTiger recoveryTimestamp. Ts: Timestamp(0, 0)
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.482+0000 I  STORAGE  [initandlisten] Timestamp monitor starting
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.490+0000 I  CONTROL  [initandlisten] 
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.490+0000 I  CONTROL  [initandlisten] ** WARNING: Access control is not enabled for the database.
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.490+0000 I  CONTROL  [initandlisten] **          Read and write access to data and configuration is unrestricted.
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.490+0000 I  CONTROL  [initandlisten] 
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.498+0000 I  SHARDING [initandlisten] Marking collection local.system.replset as collection version: <unsharded>
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.500+0000 I  STORAGE  [initandlisten] Flow Control is enabled on this deployment.
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.501+0000 I  SHARDING [initandlisten] Marking collection admin.system.roles as collection version: <unsharded>
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.501+0000 I  SHARDING [initandlisten] Marking collection admin.system.version as collection version: <unsharded>
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.504+0000 I  SHARDING [initandlisten] Marking collection local.startup_log as collection version: <unsharded>
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.507+0000 I  FTDC     [initandlisten] Initializing full-time diagnostic data capture with directory '/data/db/diagnostic.data'
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.510+0000 I  SHARDING [LogicalSessionCacheRefresh] Marking collection config.system.sessions as collection version: <unsharded>
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.511+0000 I  SHARDING [LogicalSessionCacheReap] Marking collection config.transactions as collection version: <unsharded>
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.511+0000 I  NETWORK  [listener] Listening on /tmp/mongodb-27017.sock
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.511+0000 I  NETWORK  [listener] Listening on 0.0.0.0
+[32mx-notify-mongo |[0m 2020-06-18T20:37:42.512+0000 I  NETWORK  [listener] waiting for connections on port 27017
+[33mx-notify    |[0m [33m[nodemon] 2.0.4[39m
+[33mx-notify    |[0m [33m[nodemon] to restart at any time, enter `rs`[39m
+[33mx-notify    |[0m [33m[nodemon] watching path(s): *.*[39m
+[33mx-notify    |[0m [33m[nodemon] watching extensions: js,mjs,json[39m
+[33mx-notify    |[0m [32m[nodemon] starting `node server.js`[39m
+[33mx-notify    |[0m event-loop-stats not found, ignoring event loop metrics...
+[32mx-notify-mongo |[0m 2020-06-18T20:37:43.003+0000 I  FTDC     [ftdc] Unclean full-time diagnostic data capture shutdown detected, found interim file, some metrics may have been lost. OK
+[32mx-notify-mongo |[0m 2020-06-18T20:37:43.010+0000 I  SHARDING [ftdc] Marking collection local.oplog.rs as collection version: <unsharded>
+[32mx-notify-mongo |[0m 2020-06-18T20:37:43.050+0000 I  NETWORK  [listener] connection accepted from 172.18.0.3:54218 #1 (1 connection now open)
+[32mx-notify-mongo |[0m 2020-06-18T20:37:43.055+0000 I  NETWORK  [conn1] received client metadata from 172.18.0.3:54218 conn1: { driver: { name: "nodejs", version: "3.5.7" }, os: { type: "Linux", name: "linux", architecture: "x64", version: "4.19.76-linuxkit" }, platform: "'Node.js v12.16.3, LE (unified)" }
+[33mx-notify    |[0m ? App is running at http://localhost:8080 in development mode
+[33mx-notify    |[0m   Press CTRL-C to stop
+[33mx-notify    |[0m 
