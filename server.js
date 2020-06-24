@@ -73,6 +73,8 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	const managersController = require('./controllers/managers');
 	const smtpController = require('./controllers/sendsmtp');
 
+	const authenticationController = require('./controllers/authentication');
+
 	
 
 	/**
@@ -93,7 +95,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	/**
 	 * Subscriber routes.
 	 */
-	app.get('/api/v0.1/subs/postkey', subsController.getKey);
+	app.get('/api/v0.1/subs/getAuthenticationKey', authenticationController.getKey);
 	app.post('/api/v0.1/subs/email/add',
 		// Need to do more testing
 		// passport.authenticate('basic', { session: false }),

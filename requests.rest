@@ -1,0 +1,41 @@
+GET http://localhost:8080/api/v0.1/subs/getAuthenticationKey
+
+###
+GET https://dog.ceo/api/breeds/list/all
+
+###
+
+#GET http://127.0.0.1:8200/v1/auth/token/lookup-self
+GET http://127.0.0.1:8200/v1/secret?help=1
+Content-Type: application/json
+
+{
+  "X-Vault-Token": "root"
+}
+
+###
+
+DELETE http://localhost:8080/logout
+Content-Type: application/json
+
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSmltIiwiaWF0IjoxNTY4NzU5OTIyfQ.RT6wszuCeFLwC_6ksmNMIELxiC5s-uRivfRxyZof5ag"
+}
+
+###
+
+POST http://localhost:8080/token
+Content-Type: application/json
+
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSmltIiwiaWF0IjoxNTY4NzU5OTIyfQ.RT6wszuCeFLwC_6ksmNMIELxiC5s-uRivfRxyZof5ag"
+}
+
+###
+
+POST http://localhost:8080/login
+Content-Type: application/json
+
+{
+  "username": "Jim"
+}
