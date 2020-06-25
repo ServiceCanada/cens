@@ -16,13 +16,24 @@ let dbConn;
 MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).then( ( mongoInstance ) => {
 	dbConn = mongoInstance.db( processEnv.MONGODB_NAME || 'subs' );
 	
-	toLowerCaseSubsConfirmed();
-	toLowerCaseSubsExist();
-	toLowerCaseSubsUnconfirmed();
+	toLowerCaseSubsConfirmed()
+	.then(()=>{
+		toLowerCaseSubsExist();
+	})
+	.then(()=>{
+		toLowerCaseSubsUnconfirmed();
+	});
 }).catch( (e) => { console.log( "%s MongoDB ERRROR: %s", chalk.red('✗'), e ) } );
 
+/**
+ * This function will lowercase all email values of the documents
+ * found in the subsConfirmed collection unless a duplicate would 
+ * be created.  If a duplicate would be created the entry is 
+ * deleted
+ */
 async function toLowerCaseSubsConfirmed() {
 	let numUpperCaseFound = 0;
+	let numDuplicatesRemoved = 0;
 	let cursor = dbConn.collection("subsConfirmed").find({});
 
 	while( await cursor.hasNext()){
@@ -41,17 +52,31 @@ async function toLowerCaseSubsConfirmed() {
 				{
 					$set: { email: doc.email.toLowerCase() }
 				}
-			)
+			).catch((err)=>{
+				if(err.code == 11000){ //duplicate key error, remove entry
+					console.log('Removing duplicate: ' + doc.email + "\n");
+					dbConn.collection("subsConfirmed").findOneAndDelete({email:doc.email});
+					numDuplicatesRemoved++;
+				}
+			})
 		}else{
 			console.log(doc.email + " is already all lowercase\n");
 		}
 	}
 
-	console.log("Total upper cases found and corrected in collection subsConfirmed: " + numUpperCaseFound + "\n\n");
+	console.log("Total upper cases found and corrected in collection subsConfirmed: " + numUpperCaseFound);
+	console.log("Total duplicates found and corrected in collection subsConfirmed: " + numDuplicatesRemoved + "\n\n");
 }
 
+/**
+ * This function will lowercase all email values of the documents
+ * found in the subsExist collection unless a duplicate would 
+ * be created.  If a duplicate would be created the entry is 
+ * deleted
+ */
 async function toLowerCaseSubsExist() {
 	let numUpperCaseFound = 0;
+	let numDuplicatesRemoved = 0;
 	let cursor = dbConn.collection("subsExist").find({});
 
 	while( await cursor.hasNext()){
@@ -70,17 +95,30 @@ async function toLowerCaseSubsExist() {
 				{
 					$set: { e: doc.e.toLowerCase() }
 				}
-			)
+			).catch((err)=>{
+				if(err.code == 11000){ //duplicate key error, remove entry
+					console.log('Removing duplicate: ' + doc.e + "\n");
+					dbConn.collection("subsExists").findOneAndDelete({email:doc.e});
+					numDuplicatesRemoved++;
+				}
+			})
 		}else{
 			console.log(doc.e + " is already all lowercase\n");
 		}
 	}
 
-	console.log("Total upper cases found and corrected in collection subsExist: " + numUpperCaseFound + "\n\n");
+	console.log("Total upper cases found and corrected in collection subsExist: " + numUpperCaseFound);
+	console.log("Total duplicates found and corrected in collection subsExist: " + numDuplicatesRemoved + "\n\n");
 }
 
+/**
+ * This function will lowercase all email values of the documents
+ * found in the subsUnconfirmed collection.  It does not remove 
+ * duplicates.
+ */
 async function toLowerCaseSubsUnconfirmed() {
 	let numUpperCaseFound = 0;
+	let numDuplicatesRemoved = 0;
 	let cursor = dbConn.collection("subsUnconfirmed").find({});
 
 	while( await cursor.hasNext()){
@@ -99,11 +137,14 @@ async function toLowerCaseSubsUnconfirmed() {
 				{
 					$set: { email: doc.email.toLowerCase() }
 				}
-			)
+			).catch((err)=>{
+				console.log('Unexpected error processing: ' + doc.email + "\n");
+			})
 		}else{
 			console.log(doc.email + " is already all lowercase\n");
 		}
 	}
 
-	console.log("Total upper cases found and corrected in collection subsUnconfirmed: " + numUpperCaseFound + "\n\n");
+	console.log("Total upper cases found and corrected in collection subsUnconfirmed: " + numUpperCaseFound);
+	console.log("Total duplicates found and corrected in collection subsUnconfirmed: " + numDuplicatesRemoved + "\n\n");
 }
