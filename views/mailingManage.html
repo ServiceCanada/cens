@@ -1,0 +1,61 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+	<head> 
+		<title>Mailing manager</title> 
+	</head> 
+	<body>
+	<h1>Mailing manager</h1>
+	
+	<nav>
+		<p style="text-align:right; padding-right:50px;"><a href="logout">Logout</a></p>
+	</nav>
+	{{#error}}
+		<p style="color:red">{{.}}</p>
+	{{/error}}
+	
+	{{^topics}}
+		<p style="color:red">You are not allowed to view any topics.</p>
+	{{/topics}}
+	
+	<h2>Create a new mailing</h2>
+	<form method="post" action="create">
+		<label>Title: <input name="title" /></label>
+		<label>Topic:
+			<select name="topic">
+				{{#topics}}
+					<option value="{{.}}">{{.}}</option>
+				{{/topics}}
+			</select>
+		</label>
+		<button type="submit">Create</button>
+	</form>
+
+	<h2>All mailing</h2>
+	{{^mailings}}
+		<p style="color:red">There is no mailing.</p>
+	{{/mailings}}
+	<table border="1px" cellpadding="2px"> <!-- todo: Change how the table is styled -->
+		<thead>
+			<th>Last updated</th>
+			<th>Mailing name</th>
+			<th>State</th>
+			<!-- <th>Action</th> -->
+		</thead>
+		<tbody>
+			{{#mailings}}
+				<tr>
+					<td>{{ updatedAt }}{{^ updatedAt }}{{ createdAt }}{{/ updatedAt }}</th>
+					<th><a href="{{ _id }}/edit">{{ topicId }} - {{ title }}</a></th>
+					<td>{{ state }}</th>
+					<!--
+					<td>
+						<a href="{{ _id }}/delete">Delete</a>
+					</td>
+					-->
+				</tr>
+			{{/mailings}}
+		</tbody>
+	</table>
+
+	</body> 
+</html>

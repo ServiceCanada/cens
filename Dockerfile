@@ -12,4 +12,6 @@ RUN npm install
 
 COPY . .
 
+WORKDIR ./x-notify/
+
 CMD [ "npm", "start" ]

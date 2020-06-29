@@ -1,0 +1,118 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+	<head> 
+		<title>Mailing manager</title>
+		
+		<!--
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+		<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>-->
+
+	</head> 
+	<body>
+	<h1>Mailing manager</h1>
+	
+	<nav>
+		<p style="text-align:right; padding-right:50px;"><a href="../logout">Logout</a></p>
+		<p><a href="../manage">View all mailing</a></p>
+	</nav>
+	
+	{{#error}}
+		<p style="color:red">{{.}}</p>
+	{{/error}}
+	
+	{{#msg}}
+		<p style="color:green">{{.}}</p>
+	{{/msg}}
+	
+	
+	{{#showCancelSend}}
+		<a href="cancel">Cancel the send to subscribers</a>
+	{{/showCancelSend}}
+	
+	<h2>Mailing ({{state}})</h2>
+		<p><strong>{{topicId}}</strong> - {{title}}</p>
+		<p>Created: {{createdAt}}</p>
+		<p>Last updated: {{updatedAt}}</p>
+		<form id="frmEdit" method="post" action="edit">
+			<h3>Email</h3>
+			<p><a href="notification.alpha.canada.ca/features/templates">Email formating guide</a></p>
+			
+			<div class="form-horizontal">
+				<div class="form-group">
+					<label for="mailling-title" class="col-sm-4 control-label">Mailing internal title</label>
+					<div class="col-sm-8">
+						<input type="text" class="form-control" id="mailling-title" name="title" value="{{title}}" />
+					</div>
+				</div>
+			</div>
+			<div class="form-horizontal">
+				<div class="form-group">
+					<label for="eml-subs" class="col-sm-4 control-label">Email subject</label>
+					<div class="col-sm-8">
+						<input type="text" class="form-control" id="eml-subs" name="subject" value="{{subject}}" />
+					</div>
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="txtBody">Email body content</label>
+				<textarea class="form-control" id="txtBody" name="body" rows="20" cols="200">{{#body}}{{.}}{{/body}}</textarea>
+			</div>
+	
+	{{! Don't show any button when the sending to subscribers occrus }}
+	{{^showCancelSend}}
+			<div class="form-group">
+				<label for="comments">Editorial comments</label>
+				<textarea class="form-control" id="comments" name="comments" rows="3" cols="200"></textarea>
+			</div>
+
+			<button type="submit" name="action" value="save" class="btn btn-primary">Save</button>
+			<button type="submit" name="action" value="saveTest" class="btn btn-default">Save and test</button>
+
+		{{#body}}
+			<h3>Workflow</h3>
+			<ul>
+				<!-- transform the following button into link -->
+				<li><a href="approval">Send for approval</a></li>
+				{{#showApproved}}
+					<li><a href="approved">Approve the mailing</a></li>
+				{{/showApproved}}
+				{{#showSendToSubs}}
+					<li style="margin-top:1em;"><a href="sendToSubs">Send the mailing to all subscribers</a></li>
+				{{/showSendToSubs}}
+				{{^showSendToSubs}}
+					<li style="margin-top:1em;"><a href="cancel">Cancel/archive this mailing</a></li>
+				{{/showSendToSubs}}
+			</ul>
+			{{^showCancelSend}}
+			{{/showCancelSend}}
+		{{/body}}
+	{{/showCancelSend}}
+		</form>
+
+
+
+		<h3>History</h3>
+		<dl>
+			{{#history}}
+				<dt>{{ createdAt }} - {{ state }}</dt>
+				{{#comments}}
+					<dd>{{.}}</dd>
+				{{/comments}}
+			{{/history}}
+			
+		</dl>
+		<p><a href="history">View all history</a></p>
+<!--
+Markdown not supported
+<script>
+	var simplemde = new SimpleMDE({ element: document.getElementById("txtBody") });
+	
+	simplemde.value({{#jsBody}}"{{{.}}}"{{/jsBody}});
+	
+	document.getElementById( "frmEdit" ).addEventListener( "submit", function(){
+		simplemde.toTextArea();
+	});
+</script>
+-->	
+	</body> 
+</html>
