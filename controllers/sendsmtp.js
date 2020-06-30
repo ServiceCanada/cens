@@ -15,7 +15,7 @@ const ObjectId = require('mongodb').ObjectId;
 const processEnv = process.env,
 	_devLog = !!!processEnv.prodNoLog,
 	_keySalt = processEnv.keySalt || "5417",
-	_errorPage = processEnv.errorPage || "https://canada.ca",
+	_errorPage = processEnv.errorPage || "https://www.canada.ca",
 	_successJSO = processEnv.successJSO || { statusCode: 200, ok: 1 },
 	_cErrorsJSO = processEnv.cErrorsJSO ||  { statusCode: 400, bad: 1, msg: "Bad request" },
 	_sErrorsJSO = processEnv.sErrorsJSO ||  { statusCode: 500, err: 1 },
@@ -78,20 +78,23 @@ exports.sendMailPOST = async ( req, res, next ) => {
 	}
 	
 	// Get the topic
-	const topic = await getTopicSMTP( topicId );	
+	const topic = await getTopicSMTP( topicId );
 	
 	try {
 		const timestamp = currDate,
 			to = topic.to || reqbody.emailTo;
 
-			// Define custom template fields
+		// Define custom template fields
 		let customFields = {
+			timestamp: timestamp,
 			pageTitle: reqbody.pageTitle,
 			submissionPage: reqbody.submissionPage,
 			helpful: reqbody.helpful,
 			problem: reqbody.problem,
 			details: reqbody.details,
-			timestamp: timestamp
+			institution: reqbody.institutionopt,
+			theme: reqbody.themeopt,
+			section: reqbody.sectionopt
 		};
 
 		// No topic = no good
