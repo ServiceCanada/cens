@@ -1,0 +1,14 @@
+<h3>SMTP Config</h3>
+<fieldset>
+	<legend>Settings:</legend>
+	<label for="templateTxt">Mustache Template (text version)</label><br><br>
+	<textarea rows="4" cols="50" name="put_templateTxt" form="createTopicForm">{{templateTxt}}</textarea><br><br>
+	<label for="templateHtml">Mustache Template (html version)</label><br><br>
+	<textarea rows="4" cols="50" name="put_templateHtml" form="createTopicForm">{{templateHtml}}</textarea><br><br>
+	<label for="from">Email address from</label>
+	<input type="email" id="from" name="put_from" value="{{emailFrom}}"><br><br>
+	<label for="to">Email address to</label>
+	<input type="email" id="to" name="put_to" value="{{emailTo}}"><br><br>
+	<label for="subject">Subject of email</label>
+	<input type="text" id="subject" name="put_subject" value="{{emailSubject}}"><br><br>
+</fieldset>
