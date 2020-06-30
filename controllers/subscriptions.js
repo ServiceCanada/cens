@@ -75,7 +75,7 @@ exports.addEmail = async ( req, res, next ) => {
 		topicId = reqbody.tid,
 		currDate = new Date(),
 		nBfDate = new Date();
-	let email = reqbody.eml || "";
+	let email = reqbody.eml.toLowerCase() || "";
 
 	// Validate if email is the good format (something@something.tld)
 	if ( !email.match( /.+\@.+\..+/ ) || !topicId ) {
@@ -172,7 +172,7 @@ exports.addEmailPOST = async ( req, res, next ) => {
 		currDate = new Date(),
 		nBfDate = new Date(),
 		currEpoc = Date.now(); 
-	let email = reqbody.eml || "";
+	let email = reqbody.eml.toLowerCase() || "";
 
 	let keyBuffer = new Buffer(key, 'base64'),
 		keyDecrypt = keyBuffer.toString('ascii');
