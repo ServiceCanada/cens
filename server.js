@@ -64,6 +64,12 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	//app.emit('ready');
 
 
+	var dbConn = mongoInstance.db( processEnv.MONGODB_NAME || 'sandbox' );
+	var userNameSecretKeyCollection = dbConn.collection("userNameSecretKey");
+	var userNamePasswordCollection = dbConn.collection("userNamePassword");
+	userNameSecretKeyCollection.createIndex( { "userName": 1 }, { unique: true } );
+
+
 	/**
 	 * Controllers (route handlers).
 	 */
@@ -86,11 +92,14 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	app.use(expressStatusMonitor( { path: processEnv.ServerStatusPath || "/admin/sys-status" } ));
 	app.use(compression());
 	app.use(logger( processEnv.LOG_FORMAT || 'dev'));
-
 	app.use(bodyParser.json()); // for parsing application/json
-
 	app.disable('x-powered-by');
+	
 
+	/**
+	 * Middleware to enable cors
+	 */
+	app.use( cors( { "origin": "*" } ) );
 
 	/**
 	 * Subscriber routes.
@@ -170,9 +179,9 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	 * Users related handlers such as register, login and verification
 	 */
 
+	app.use('/api/v0.1/users', require('./routes/users.js'));
 
 
-	 
 	/**
 	 * Error Handler.
 	 */

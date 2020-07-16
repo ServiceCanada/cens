@@ -1,89 +1,18 @@
 /**
  * Module dependencies.
  */
-
-
 const express = require('express'); // HTTP server
-const compression = require('compression'); // gzip for the HTTP body
-const cors = require('cors'); // CORS
-
-const logger = require('morgan'); // HTTP request logger
 const bcrypt = require('bcryptjs');
-const expressStatusMonitor = require('express-status-monitor'); // Monitor of the service (CPU/Mem,....)
-const errorHandler = require('errorhandler');
-const dotenv = require('dotenv'); // Application configuration
-const path = require('path');
-const chalk = require('chalk'); // To color message in console log 
 const jwt = require('jsonwebtoken')
-const passport = require('passport'); // Authentication	 
-
-
-const bodyParser = require('body-parser');
-//const { generateKeyPair } = require('crypto');
 const crypto = require('crypto');
-const util = require('util');
-
-const MongoClient = require('mongodb').MongoClient;
-
-const processEnv = process.env;
 
 /**
  * Create Express server.
  */
-const app = express();
+const usersRouter = express();
 
-
-/**
- * Load environment variables from .env file, where API keys and passwords are configured.
- */
-dotenv.config({
-    path: '.env'
-});
-
-const _corsSettings = JSON.parse(processEnv.cors || '{"optionSucessStatus":200}');	// Parse CORS settings
-
-
-/**
- * Connect to MongoDB.
- */
-
-MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).then( ( mongoInstance ) => {
-
-	var dbConn = mongoInstance.db( processEnv.MONGODB_NAME || 'sandbox' );
-	var userNameSecretKeyCollection = dbConn.collection("userNameSecretKey");
-	var userNamePasswordCollection = dbConn.collection("userNamePassword");
-	userNameSecretKeyCollection.createIndex( { "userName": 1 }, { unique: true } );
-	//userNamePasswordCollection.createIndex( { "userName": 1 }, { unique: true } );
-// 
-
-
-
-/**
- * Express configuration.
- */
-app.set('host', processEnv.Host || '0.0.0.0');
-app.set('port', processEnv.Port || 8080);
-
-//app.use(compression()); // Compression not recommended
-app.use(logger( processEnv.LOG_FORMAT || 'dev'));
-
-app.use(bodyParser.json()); // for parsing application/json
-
-app.disable('x-powered-by');
-
-
-
-
-
-/**
- * Middleware to enable cors
- */
-app.use( cors( { "origin": "*" } ) );
-
-
-
-  // List mailing for the user
-app.get( '/mailing/create/:topicId', cors( { "origin": "*" } ), 
+// List mailing for the user
+usersRouter.get( '/mailing/create/:topicId', cors( { "origin": "*" } ), 
          verifyToken, ( req, res ) => {
 	const user = req.user;
 	res.json( {
@@ -99,7 +28,7 @@ app.get( '/mailing/create/:topicId', cors( { "origin": "*" } ),
 // Generate the secret key 
 let keyMap = new Map()
 const NO_USER = "noUser";
-app.post('/test/getSecretKey', (req, res) => {
+usersRouter.post('/getSecretKey', (req, res) => {
 	const secretKey =  crypto.randomBytes(64).toString('base64').replace(/\//g,'_').replace(/\+/g,'-');
 	console.log(secretKey);
 	// first loading to get secret key, there is no way to get to know the user info
@@ -122,7 +51,7 @@ app.post('/test/getSecretKey', (req, res) => {
 
 
   // Get all the username Password 
-app.get('/test/getAllUserNamePassword', (req, res) => {
+usersRouter.get('/getAllUserNamePassword', (req, res) => {
 		
 	userNamePasswordCollection.find({}).toArray(function(err, result) {
 		if (err) throw err;
@@ -133,9 +62,8 @@ app.get('/test/getAllUserNamePassword', (req, res) => {
   );
 
 
-
   // Register
-app.post('/test/register', (req, res) => {
+usersRouter.post('/register', (req, res) => {
 	var { username,  password } = req.body;
 	console.log(username + " as username and password " + password);
 	let errors = [];
@@ -168,11 +96,8 @@ app.post('/test/register', (req, res) => {
   );
 
 
-
-
-
 // Generate the key and persist in hashmap
-app.post('/test/login', verifyToken, (req, res) => {
+usersRouter.post('/login', verifyToken, (req, res) => {
 	// Authenticate User
 	//res.status(500).send('The email is not registered');
 	//console.log( req.headers );
@@ -282,8 +207,5 @@ function verifyToken(req, res, next) {
 
   }
 
-
-
-	
-module.exports = app;
+module.exports = usersRouter;
 
