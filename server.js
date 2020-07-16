@@ -73,6 +73,8 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 
 	const authenticationController = require('./controllers/authentication');
 
+	const users = require('./controllers/users');
+
 	
 
 	/**
@@ -164,6 +166,13 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 		bodyParser.urlencoded({extended:false, limit: '10kb'}),
 		smtpController.sendMailPOST);
 
+	/**
+	 * Users related handlers such as register, login and verification
+	 */
+
+
+
+	 
 	/**
 	 * Error Handler.
 	 */
