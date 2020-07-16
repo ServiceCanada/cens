@@ -98,7 +98,7 @@ async function toLowerCaseSubsExist() {
 			).catch((err)=>{
 				if(err.code == 11000){ //duplicate key error, remove entry
 					console.log('Removing duplicate: ' + doc.e + "\n");
-					dbConn.collection("subsExists").findOneAndDelete({email:doc.e});
+					dbConn.collection("subsExist").findOneAndDelete({e:doc.e});
 					numDuplicatesRemoved++;
 				}
 			})
