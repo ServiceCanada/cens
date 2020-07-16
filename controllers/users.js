@@ -3,27 +3,20 @@
  */
 const express = require('express'); // HTTP server
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+
+const userNameSecretKeyCollection = module.parent.exports.userNameSecretKeyCollection;
+
+const userNamePasswordCollection = module.parent.exports.userNamePasswordCollection;
+
+userNameSecretKeyCollection.createIndex( { "userName": 1 }, { unique: true } );
 
 /**
  * Create Express server.
  */
 const usersRouter = express();
 
-// List mailing for the user
-usersRouter.get( '/mailing/create/:topicId', cors( { "origin": "*" } ), 
-         verifyToken, ( req, res ) => {
-	const user = req.user;
-	res.json( {
-				id: "uid-33",
-				created: "2020-06-16",
-				updated: "2020-06-16",
-				title: "Mailing Title",
-				user
-			} );
-
-});
 
 // Generate the secret key 
 let keyMap = new Map()
@@ -50,7 +43,7 @@ usersRouter.post('/getSecretKey', (req, res) => {
   })
 
 
-  // Get all the username Password 
+// Get all the username Password 
 usersRouter.get('/getAllUserNamePassword', (req, res) => {
 		
 	userNamePasswordCollection.find({}).toArray(function(err, result) {
@@ -62,7 +55,7 @@ usersRouter.get('/getAllUserNamePassword', (req, res) => {
   );
 
 
-  // Register
+// Register
 usersRouter.post('/register', (req, res) => {
 	var { username,  password } = req.body;
 	console.log(username + " as username and password " + password);
@@ -147,6 +140,19 @@ usersRouter.post('/login', verifyToken, (req, res) => {
   })
 
 
+// List mailing for the user
+usersRouter.get( '/mailing/create/:topicId', cors( { "origin": "*" } ), 
+         verifyToken, ( req, res ) => {
+	const user = req.user;
+	res.json( {
+				id: "uid-33",
+				created: "2020-06-16",
+				updated: "2020-06-16",
+				title: "Mailing Title",
+				user
+			} );
+
+});
 
 // Authenticate the JWT and verify that if it is tampered or not
 // FORMATE OF TOKEN

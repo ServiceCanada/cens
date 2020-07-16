@@ -19,7 +19,8 @@ const passport = require('passport'); // Authentication
 const BasicStrategy = require('passport-http').BasicStrategy;
 
 const bodyParser = require('body-parser');
-//const crypto = require('crypto'); // To encrypt Notify keys
+
+//const bcrypt = require('bcryptjs');
 
 const MongoClient = require('mongodb').MongoClient;
 
@@ -59,15 +60,12 @@ const app = express();
  */
 
 MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).then( ( mongoInstance ) => {
+	var dbConnInstance =  mongoInstance.db( processEnv.MONGODB_NAME || 'subs' );;
 
-	module.exports.dbConn = mongoInstance.db( processEnv.MONGODB_NAME || 'subs' );
-	//app.emit('ready');
-
-
-	var dbConn = mongoInstance.db( processEnv.MONGODB_NAME || 'sandbox' );
-	var userNameSecretKeyCollection = dbConn.collection("userNameSecretKey");
-	var userNamePasswordCollection = dbConn.collection("userNamePassword");
-	userNameSecretKeyCollection.createIndex( { "userName": 1 }, { unique: true } );
+	module.exports.dbConn = dbConnInstance;
+	module.exports.userNameSecretKeyCollection = dbConnInstance.collection("userNameSecretKey");
+	module.exports.userNamePasswordCollection = dbConnInstance.collection("userNamePassword");
+	
 
 
 	/**
@@ -79,7 +77,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 
 	const authenticationController = require('./controllers/authentication');
 
-	const users = require('./controllers/users');
+	//const users = require('./controllers/users');
 
 	
 
@@ -179,7 +177,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	 * Users related handlers such as register, login and verification
 	 */
 
-	app.use('/api/v0.1/users', require('./routes/users.js'));
+	app.use('/api/v0.1/users', require('./controllers/users.js'));
 
 
 	/**
