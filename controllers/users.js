@@ -171,9 +171,6 @@ usersRouter.get('/logout', (req, res) => {
 
 	res.sendStatus(200);
 	
-
-	//req.flash('success_msg', 'You are logged out');
-	//res.redirect('/users/login');
   });
 
 // Authenticate the JWT and verify that if it is tampered or not
