@@ -1,0 +1,56 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+	<head> 
+		<title>Topic Management Home</title> 
+	</head> 
+	<body> 
+		<form action="/api/v0.1/t-manager/{{accessCode}}/topic" method="post" id="createTopicForm"> 
+			<h3>Create a new topic</h3><br/> 
+			<label for"topicId">Topic Id:</label><br> 
+			<input type="text" id="topicId" name="topicId"><br><br> 
+			<table>
+				<tr>
+					<td>
+						<label for"notifyAPIKey">Notify API Key:</label><br> 
+						<input type="text" id="notifyAPIKey" name="notifyAPIKey" value="a notify key value"><br><br> 
+						<label for"notifyTemplateId">Notify Template Id:</label><br> 
+						<input type="text" id="notifyTemplateId" name="notifyTemplateId" value="<template id available in the template in Notify>"><br><br>
+							<label for"confSubLink">Confirmation Subscription Link:</label><br>
+							<input type="text" id="confSubLink" name="confSubLink" value="https://canada.ca/conf.html"><br><br>
+							<label for"confUnsubLink">Unsubscription Link:</label><br>
+							<input type="text" id="confUnsubLink" name="confUnsubLink" value="https://canada.ca/unsub.html"><br><br>
+							<label for"thankYouUrl">Thank you URL:</label><br>
+							<input type="text" id="thankYouUrl" name="thankYouUrl" value="https://canada.ca/thankyou.html"><br><br>
+							<label for"failureUrl">Server Error URL:</label><br> 
+							<input type="text" id="failureUrl" name="failureUrl" value="https://canada.ca/failure.html"><br><br>
+							<label for"inputErrorUrl">Form Error URL:</label><br> 
+							<input type="text" id="inputErrorUrl" name="inputErrorUrl" value="https://canada.ca/form-error.html"><br><br>
+					</td>
+					<td>
+						<label>groupName:</label><br>
+						<input type="text" name="groupName" value="Your groupName here"><br><br>
+						<label>description:</label><br>
+						<input type="text" name="description" value="a topic description"><br><br>
+						<label>lang</label><br>
+						<input type="text" name="lang" value="lang value"><br><br>
+						<label>langAlt:</label><br>
+						<input type="text" name="langAlt" value="langAlt value"><br><br>
+
+					</td>
+					<td>
+						{{{smtpConfig}}}
+					</td>
+				</tr>
+			</table>
+			<br> 
+			<input type="submit" value="Create"> 
+		</form> 
+		<br/><p> 
+		<form action="/api/v0.1/t-manager/{{accessCode}}/topic" method="get"> 
+			<h3>Find a topic</h3> 
+			<label for"topicId">Topic Id:</label><br> 
+			<input type="text" id="topicId" name="topicId"><br><br> 
+			<input type="submit" value="GET"> 
+		</form> 
+	</body> 
+</html>

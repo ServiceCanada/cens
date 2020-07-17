@@ -115,6 +115,28 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	/**
 	 * Manager routes.
 	 */
+	app.get('/api/v0.1/t-manager/:accessCode/home',
+		passport.authenticate('basic', { session: false }),
+		managersController.serveHome);
+	app.post('/api/v0.1/t-manager/:accessCode/topic',
+		passport.authenticate('basic', { session: false }),
+		bodyParser.urlencoded({extended:false, limit: '10kb'}),
+		managersController.createTopic);
+	app.get('/api/v0.1/t-manager/:accessCode/:topicId',
+		passport.authenticate('basic', { session: false }),
+		managersController.getTopic);
+	app.put('/api/v0.1/t-manager/:accessCode/:topicId',
+		passport.authenticate('basic', { session: false }),
+		managersController.modifyTopic);
+	app.get('/api/v0.1/t-manager/:accessCode/:topicId/modSuccess',
+		passport.authenticate('basic', { session: false }),
+		managersController.showModSuccess);
+	app.delete('/api/v0.1/t-manager/:accessCode/:topicId/',
+		passport.authenticate('basic', { session: false }),
+		managersController.deleteTopic);
+	app.get('/api/v0.1/t-manager/:accessCode/:topicId/deleteSuccess',
+		passport.authenticate('basic', { session: false }),
+		managersController.showDeleteSuccess);
 	//app.param('/api/v0.1/t-manager/:code/:topic', managersController.validateCodeTopic);
 	app.get('/api/v0.1/t-manager/:accessCode/:topicId/list',
 		passport.authenticate('basic', { session: false }),
