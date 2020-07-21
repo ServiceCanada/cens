@@ -38,6 +38,9 @@ dotenv.config({
 
 const _corsSettings = JSON.parse(processEnv.cors || '{"optionSucessStatus":200}');	// Parse CORS settings
 
+const _baseFolder = process.env.baseFolder || ""; 
+
+
 // 
 // HTTP auth
 //
@@ -205,7 +208,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	app.get( '/api/v1/mailing/logout', userController.logout );
 	app.post( '/api/v1/mailing/login',
 		bodyParser.urlencoded({extended:true, limit: '50k'}),
-		passport.authenticate('local', { successRedirect: '/api/v1/mailing/manage', failureRedirect: '/api/v1/mailing/login'} ) );
+		passport.authenticate('local', { successRedirect: _baseFolder + '/api/v1/mailing/manage', failureRedirect: _baseFolder + '/api/v1/mailing/login'} ) );
 
 		
 	app.get('/api/v1/mailing/manage',

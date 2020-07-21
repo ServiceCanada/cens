@@ -127,109 +127,160 @@ Note: We need to set the Service ID associated to the topic details (field: `nSe
 ## Collections
 
 topics
-	_id: topicId
-	templateId: Notify template id
-	notifyKey: Notify Key
-	confirmURL: Confirmation URL
-	unsubURL: Unsubscription URL
-	templateTxt: Mustache template for the email text version (SMTP only),
-	templateHtml: Mustache template for the email HTML version (SMTP only),
-	from: Email address from (SMTP only),
-	to: Email address to (SMTP only),
-	subject: Subject of email (SMTP only),
-	thankURL: Thank you URL for redirection,
-	failURL: Failure URL for server error,
-	inputErrURL: Failure URL for filling out the form incorrectly
+* _id: topicId
+* templateId: Notify template id
+* notifyKey: Notify Key
+* confirmURL: Confirmation URL
+* unsubURL: Unsubscription URL
+* templateTxt: Mustache template for the email text version (SMTP only),
+* templateHtml: Mustache template for the email HTML version (SMTP only),
+* from: Email address from (SMTP only),
+* to: Email address to (SMTP only),
+* subject: Subject of email (SMTP only),
+* thankURL: Thank you URL for redirection,
+* failURL: Failure URL for server error,
+* inputErrURL: Failure URL for filling out the form incorrectly
+* mailingNTmplId: template ID for sending a corresponding mailing
 	
 
 topics_details
-	_id: topicId
-	accessCode: Array of <string>
-	createdAt
-	lastUpdated
-	groupName: Name of the department or section
-	description: Short description about this topic
-	lang: Language of this topic
-	langAtl: Alternative language equivalent at this topic
-	retrieving: Array of <managersAccess>
-	nServiceId: Service ID associated with the notify key
+* _id: topicId
+* accessCode: Array of <string>
+* createdAt
+* lastUpdated
+* groupName: Name of the department or section
+* description: Short description about this topic
+* lang: Language of this topic
+* langAtl: Alternative language equivalent at this topic
+* retrieving: Array of <managersAccess>
+* nServiceId: Service ID associated with the notify key
+* approvers: Array of <approvers>
 
 subsExist
-	e: email
-	t: topicId
+* e: email
+* t: topicId
 	
 subsUnconfirmed
-	email
-	subscode
-	topicId
-	noBefore: timestamps to prevent to resend a new email in a short period of time
-	createAt
-	tId: Notify template id
-	nKey: Notify key
-	cURL: Confirmation URL
+* email
+* subscode
+* topicId
+* noBefore: timestamps to prevent to resend a new email in a short period of time
+* createAt
+* tId: Notify template id
+* nKey: Notify key
+* cURL: Confirmation URL
 
 
 subsConfirmed
-	email
-	subscode
-	topicId
+* email
+* subscode
+* topicId
 
 subsUnsubs
-	c: createdAt (ttl of 30 days)
-	e: email
-	t: topicID
+* c: createdAt (ttl of 30 days)
+* e: email
+* t: topicID
 
 subs_logs
-	_id: email or phone
-	createdAt
-	lastUpdated
-	confirmEmail: Array of <subsInfo>
-	subsEmail: Array of <subsInfo>, on subscription
-	unsubsEmail: Array of <subsInfo>
-	resendEmail: Array of <subInfoResend>	
+* _id: email or phone
+* createdAt
+* lastUpdated
+* confirmEmail: Array of <subsInfo>
+* subsEmail: Array of <subsInfo>, on subscription
+* unsubsEmail: Array of <subsInfo>
+* resendEmail: Array of <subInfoResend>	
 
 subsRecents
-	email
-	subscode
-	topicId
-	link: Only there when unsubscribing
+* email
+* subscode
+* topicId
+* link: Only there when unsubscribing
 	
 ### Sub documents
 
 subsInfo
-	topicId
-	subscode
-	createdAt
+* topicId
+* subscode
+* createdAt
 
 subInfoResend
-	topicId
-	createdAt
-	withEmail // flag set to true when a new confirmation is sent
+* topicId
+* createdAt
+* withEmail // flag set to true when a new confirmation is sent
 
 managersAccess
-	createdAt
-	tId: Topic ID
-	code: Access code used
+* createdAt
+* tId: Topic ID
+* code: Access code used
 
 subsConfirmedNewCode
-	subscode
-	email
-	newsubscode
-	topicId
-
+* subscode
+* email
+* newsubscode
+* topicId
 
 notify_badEmail_logs
-	createdAt
-	code
-	email
+* createdAt
+* code
+* email
 
 notify_tooManyReq_logs
-	createdAt
-	email
-	code
-	templateId: Of Notify
-	details: Description of the error message returned
+* createdAt
+* email
+* code
+* templateId: Of Notify
+* details: Description of the error message returned
+
+approvers
+* email
+* subscode
+
+### Mailing
+
+mailing
+* topicId
+* title
+* state: value of <mailingStateEnum>
+* subject
+* createdAt
+* updatedAt
+* history: Capped array of 10 <mailingInnerHistory>
+
+mailingHistory
+* state: value of <mailingStateEnum>
+* createdAt
+* comments
+* mailingId
+
+users
+* name
+* pass
+* email
+* accessToTopicId: Array of topicID 
+
+### Sub documents for Mailing
+
+
+{
+		email: "email@example.com",
+		subscode: "---This-Is-For-Approval---"
+	}
 	
+mailingInnerHistory
+* state: value of <mailingStateEnum>
+* createAt
+* comments
+* historyId
+
+mailingStateEnum (Enumeration)
+* draft
+* completed
+* approved
+* sending
+* sent
+* cancelled
+
+
 ## Indexes
 
 ```
@@ -286,5 +337,9 @@ db.subsConfirmed.createIndex(
 	{ email: 1, subscode: 1 },
 	{ unique: true }
 );
+
+
+mailing
+* topicId + updatedAt
 
 ```
