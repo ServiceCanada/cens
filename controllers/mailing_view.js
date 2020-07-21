@@ -11,7 +11,7 @@ const mustache = require('mustache');
 const fsPromises = require('fs').promises;
 const mailing = require('./mailing');
 const _mailingState = mailing.mailingState;
-
+const baseRedirFolder = ( process.env.baseFolder || "" ) + "/api/v1/mailing/";
  
 async function renderTemplate( tmplName, data ) {
 	// Get the view, mustache template
@@ -126,7 +126,7 @@ exports.v_mailingCreate = async ( req, res, next ) => {
 		let mailingId = await mailing.mailingCreate( topic, title );
 		
 		// Let's the edit mailing do the work
-		res.redirect( "/api/v1/mailing/" + mailingId + "/edit" )
+		res.redirect( baseRedirFolder + mailingId + "/edit" )
 	} catch ( e ){
 		
 		// Return mailingManager + Error message
@@ -205,7 +205,7 @@ exports.v_mailingCancelled = async ( req, res, next ) => {
 	
 	await mailing.mailingCancelled( mailingId );
 
-	res.redirect( "/api/v1/mailing/" + mailingId + "/edit" );
+	res.redirect( baseRedirFolder + mailingId + "/edit" );
 }
 
 
@@ -217,7 +217,7 @@ exports.v_mailingApproval = async ( req, res, next ) => {
 	
 	await mailing.mailingApproval( mailingId );
 	
-	res.redirect( "/api/v1/mailing/" + mailingId + "/edit" );
+	res.redirect( baseRedirFolder + mailingId + "/edit" );
 	
 }
 
@@ -229,7 +229,7 @@ exports.v_mailingApproved = async ( req, res, next ) => {
 	
 	await mailing.mailingApproved( mailingId );
 	
-	res.redirect( "/api/v1/mailing/" + mailingId + "/edit" );
+	res.redirect( baseRedirFolder + mailingId + "/edit" );
 }
 
 exports.v_mailingSendToSub = async ( req, res, next ) => {
@@ -242,7 +242,7 @@ exports.v_mailingSendToSub = async ( req, res, next ) => {
 	
 	await mailing.mailingSendToSub( mailingId );
 	
-	res.redirect( "/api/v1/mailing/" + mailingId + "/edit" );
+	res.redirect( baseRedirFolder + mailingId + "/edit" );
 	
 }
 
@@ -254,6 +254,6 @@ exports.v_mailingCancelSendingToSub = async ( req, res, next ) => {
 	
 	await mailing.mailingCancelSendToSub( mailingId );
 
-	res.redirect( "/api/v1/mailing/" + mailingId + "/edit" );
+	res.redirect( baseRedirFolder + mailingId + "/edit" );
 	
 }
