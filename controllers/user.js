@@ -100,7 +100,7 @@ exports.isAuthenticated = (req, res, next) => {
   if (req.isAuthenticated()) {
     return next();
   }
-  res.redirect('/api/v1/mailing/login');
+  res.redirect( ( process.env.baseFolder || "" ) + "/api/v1/mailing/login" );
 };
 
 
@@ -129,6 +129,6 @@ exports.logout = (req, res) => {
 			console.log('Error : Failed to destroy the session during logout.', err);
 		}
 		req.user = null;
-		res.redirect('/api/v1/mailing/login');
+		res.redirect( ( process.env.baseFolder || "" ) + "/api/v1/mailing/login" );
 	});
 };
