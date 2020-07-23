@@ -176,11 +176,11 @@ async function init() {
 				dbConn.collection( "notify_badEmail_logs" ).insertOne( 
 					{
 						createdAt: currDate,
-						code: confirmCode,
+						code: userCodeUrl,
 						email: email
 					}
 				).catch( (e2) => {
-					console.log( "worker-sendNotifyConfirmEmail: notify_badEmail_logs: " + confirmCode );
+					console.log( "worker-sendNotifyConfirmEmail: notify_badEmail_logs: " + userCodeUrl );
 					console.log( e2 );
 					console.log( e );
 				});
@@ -194,12 +194,12 @@ async function init() {
 					{
 						createdAt: currDate,
 						email: email,
-						code: confirmCode,
+						code: userCodeUrl,
 						templateId: templateId,
 						details: msg
 					}
 				).catch( (e2) => {
-					console.log( "worker-sendNotifyConfirmEmail: notify_tooManyReq_logs: " + confirmCode );
+					console.log( "worker-sendNotifyConfirmEmail: notify_tooManyReq_logs: " + userCodeUrl );
 					console.log( e2 );
 					console.log( e );
 				});
@@ -235,17 +235,17 @@ async function init() {
 						msg: msg,
 						statusCode: statusCode,
 						err: e.toString(),
-						code: confirmCode
+						code: userCodeUrl
 					}
 				).catch( (e2) => {
-					console.log( "worker-sendNotifyConfirmEmail: notify_logs: " + confirmCode );
+					console.log( "worker-sendNotifyConfirmEmail: notify_logs: " + userCodeUrl );
 					console.log( e2 );
 					console.log( e );
 				});
 				
 			}
 		
-			console.log( "worker-sendNotifyConfirmEmail: sendEmail " + confirmCode );
+			console.log( "worker-sendNotifyConfirmEmail: sendEmail " + userCodeUrl );
 		});
 		
 		// after 40, wait 1 second before to send the next 40 emails.
