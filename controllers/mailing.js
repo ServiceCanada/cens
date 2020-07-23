@@ -138,7 +138,7 @@ exports.mailingCancelled = async ( mailingId ) => {
 	return true;
 }
 
-exports.mailingSave = async ( mailingId, title, subject, body, comments ) => {
+async function mailingSave ( mailingId, title, subject, body, comments ) {
 	// Save the draft email
 	// Set state to "draft"
 	
@@ -153,6 +153,7 @@ exports.mailingSave = async ( mailingId, title, subject, body, comments ) => {
 	
 	return mailingView( mailingId );
 }
+exports.mailingSave = mailingSave;
 
 exports.mailingSaveTest = async ( email, mailingId, title, subject, body, comments ) => {
 	// Send a test email to the current logged user email
