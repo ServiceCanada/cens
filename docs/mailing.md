@@ -6,7 +6,7 @@
 * Have one topic
 
 Configure the topic
-* add "mailingNTmplId" Mailing Notify Template ID
+* add "nTemplateMailingId" Mailing Notify Template ID
 
 Configure the topics_details
 * add "approvers" String Array of emails to send a sample of the mailing for their review before to mark the mailing "approved"

@@ -429,7 +429,7 @@ getTopic = ( topicId ) => {
 			{ projection: {
 					_id: 1,
 					templateId: 1,
-					mailingNTmplId: 1,
+					nTemplateMailingId: 1,
 					notifyKey: 1,
 					confirmURL: 1,
 					unsubURL: 1,

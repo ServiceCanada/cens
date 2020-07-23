@@ -140,8 +140,8 @@ topics
 * thankURL: Thank you URL for redirection,
 * failURL: Failure URL for server error,
 * inputErrURL: Failure URL for filling out the form incorrectly
-* mailingNTmplId: template ID for sending a corresponding mailing
-	
+* nTemplateMailingId: template ID for sending a corresponding mailing
+
 
 topics_details
 * _id: topicId
