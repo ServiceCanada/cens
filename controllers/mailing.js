@@ -181,7 +181,7 @@ exports.mailingApproval = async ( mailingId ) => {
 
 	
 	// Send the mailing to the "approval email list"
-	let tDetails = await dbConn.collection( "topic_details" ).findOne( 
+	let tDetails = await dbConn.collection( "topics_details" ).findOne( 
 		{
 			_id: mailingInfo.topicId
 		},
