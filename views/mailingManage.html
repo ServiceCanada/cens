@@ -1,10 +1,10 @@
 <!DOCTYPE html> 
 <html lang="en"> 
 	<head> 
-		<title>Mailing manager</title> 
+		<title>Email campaign service</title> 
 	</head> 
 	<body>
-	<h1>Mailing manager</h1>
+	<h1>Email campaign service</h1>
 	
 	<nav>
 		<p style="text-align:right; padding-right:50px;"><a href="logout">Logout</a></p>
@@ -17,10 +17,10 @@
 		<p style="color:red">You are not allowed to view any topics.</p>
 	{{/topics}}
 	
-	<h2>Create a new mailing</h2>
+	<h2>Create a new campaign</h2>
 	<form method="post" action="create">
-		<label>Title: <input name="title" /></label>
-		<label>Topic:
+		<label>Campaign name: <input name="title" /></label>
+		<label>Campaign topic:
 			<select name="topic">
 				{{#topics}}
 					<option value="{{.}}">{{.}}</option>
@@ -30,23 +30,23 @@
 		<button type="submit">Create</button>
 	</form>
 
-	<h2>All mailing</h2>
+	<h2>All campaign</h2>
 	{{^mailings}}
-		<p style="color:red">There is no mailing.</p>
+		<p style="color:red">There is no campaign.</p>
 	{{/mailings}}
 	<table border="1px" cellpadding="2px"> <!-- todo: Change how the table is styled -->
 		<thead>
+			<th>Campaign name</th>
+			<th>Status</th>
 			<th>Last updated</th>
-			<th>Mailing name</th>
-			<th>State</th>
 			<!-- <th>Action</th> -->
 		</thead>
 		<tbody>
 			{{#mailings}}
 				<tr>
-					<td>{{ updatedAt }}{{^ updatedAt }}{{ createdAt }}{{/ updatedAt }}</th>
 					<th><a href="{{ _id }}/edit">{{ topicId }} - {{ title }}</a></th>
 					<td>{{ state }}</th>
+					<td>{{ updatedAt }}{{^ updatedAt }}{{ createdAt }}{{/ updatedAt }}</th>
 					<!--
 					<td>
 						<a href="{{ _id }}/delete">Delete</a>
