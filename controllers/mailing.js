@@ -234,6 +234,47 @@ exports.mailingSendToSub = async ( mailingId ) => {
 	
 }
 
+// Get stats for the given topics
+exports.mailingGetTopicStats = async ( topics ) => {
+
+	topics = Array.isArray( topics ) ? topics : [ topics ];
+
+	let i,
+		i_len = topics.length,
+		results = [],
+		currDate = new Date();
+	
+	for ( i = 0; i !== i_len; i = i + 1 ) {
+		
+		let currentTopic = topics[ i ];
+		if ( !currentTopic ) {
+			continue;
+		}
+		
+		let topicStat = {
+			name: currentTopic,
+			date: currDate.toString()
+		};
+		topicStat.nbConfirmed = await dbConn.collection( "subsConfirmed" ).countDocuments(
+			{
+				topicId: currentTopic
+			}
+		);
+		topicStat.nbUnconfirmed = await dbConn.collection( "subsUnconfirmed" ).countDocuments(
+			{
+				topicId: currentTopic
+			}
+		);
+		
+		results.push( topicStat );
+	}
+
+	return {
+		topics: results
+	};
+
+}
+
 // Update an history item for the mailing
 async function mailingUpdate( mailingId, newHistoryState, options ) {
 

@@ -16,7 +16,7 @@
 	{{^topics}}
 		<p style="color:red">You are not allowed to view any topics.</p>
 	{{/topics}}
-	
+
 	<h2>Create a new campaign</h2>
 	<form method="post" action="create">
 		<label>Campaign name: <input name="title" /></label>
@@ -34,6 +34,11 @@
 	{{^mailings}}
 		<p style="color:red">There is no campaign.</p>
 	{{/mailings}}
+
+	{{#topics}}
+		<p><a href="stats">View subscriptions statistic by topic name</a></p>
+	{{/topics}}
+
 	<table border="1px" cellpadding="2px"> <!-- todo: Change how the table is styled -->
 		<thead>
 			<th>Campaign name</th>

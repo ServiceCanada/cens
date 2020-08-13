@@ -243,6 +243,9 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	app.get('/api/v1/mailing/:mailingid/sendToSubs',
 		userController.isAuthenticated,
 		mailingController.v_mailingSendToSub);
+	app.get('/api/v1/mailing/stats',
+		userController.isAuthenticated,
+		mailingController.v_mailingGetTopicStats);
 	
 	/**
 	 * SMTP Mail routes.
