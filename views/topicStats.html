@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en"> 
+	<head> 
+		<title>Statistic - Email subscriptions per topic</title>
+	</head> 
+	<body>
+	<h1>Statistic - Email subscriptions per topic</h1>
+	
+	<nav>
+		<p style="text-align:right; padding-right:50px;"><a href="logout">Logout</a></p>
+		<p><a href="manage">View all campaign</a></p>
+	</nav>
+	
+	{{^topics}}
+		<p style="color:red">You are not allowed to view any topics.</p>
+	{{/topics}}
+	
+	{{#topics}}
+		<h2>{{ name }} - Cumulative subscription</h2>
+		<p>as {{ date }}</p>
+		<dl>
+			<dt>Confirmed</dt>
+			<dd>{{ nbConfirmed }}</dd>
+			<dt>Awaiting email confirmation</dt>
+			<dd>{{ nbUnconfirmed }}</dd>
+		</dl>
+	{{/topics}}
+	</body> 
+</html>

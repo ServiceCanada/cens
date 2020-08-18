@@ -257,3 +257,15 @@ exports.v_mailingCancelSendingToSub = async ( req, res, next ) => {
 	res.redirect( _baseRedirFolder + mailingId + "/edit" );
 	
 }
+
+exports.v_mailingGetTopicStats = async ( req, res, next ) => {
+	
+	let topics = req.user.accessToTopicId;
+	
+	// Get the stats
+	const topicsStats = await mailing.mailingGetTopicStats( topics );
+	
+	// Render the page
+	res.status( 200 ).send( await renderTemplate( "topicStats.html", topicsStats ) );
+	
+}
