@@ -35,9 +35,7 @@
 		<p style="color:red">There is no campaign.</p>
 	{{/mailings}}
 
-	{{#topics}}
-		<p><a href="stats">View subscriptions statistic by topic name</a></p>
-	{{/topics}}
+	<p><a href="stats">View subscriptions statistic by topic name</a></p>
 
 	<table border="1px" cellpadding="2px"> <!-- todo: Change how the table is styled -->
 		<thead>
@@ -50,8 +48,8 @@
 			{{#mailings}}
 				<tr>
 					<th><a href="{{ _id }}/edit">{{ topicId }} - {{ title }}</a></th>
-					<td>{{ state }}</th>
-					<td>{{ updatedAt }}{{^ updatedAt }}{{ createdAt }}{{/ updatedAt }}</th>
+					<td>{{ state }}</td>
+					<td>{{ updatedAt }}{{^ updatedAt }}{{ createdAt }}{{/ updatedAt }}</td>
 					<!--
 					<td>
 						<a href="{{ _id }}/delete">Delete</a>
