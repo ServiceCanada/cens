@@ -14,4 +14,6 @@ COPY . .
 
 WORKDIR ./x-notify/
 
+COPY ./.env-example ./.env
+
 CMD [ "npm", "start" ]
