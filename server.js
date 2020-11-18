@@ -132,6 +132,10 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 		passport.authenticate('basic', { session: false }),
 		bodyParser.urlencoded({extended:false, limit: '10kb'}),
 		managersController.createTopic);
+	app.get('/api/v0.1/t-manager/:accessCode/:topicId/flush-cache',
+		passport.authenticate('basic', { session: false }),
+		smtpController.flushCacheSMTP,
+		subsController.flushCache);
 	app.get('/api/v0.1/t-manager/:accessCode/:topicId',
 		passport.authenticate('basic', { session: false }),
 		managersController.getTopic);
@@ -182,10 +186,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	 * Admin routes.
 	 */
 	// app.get('/subs/remove_unconfirm/:subscode/:email', subsController.removeUnconfirmEmail);
-	app.get('/api/v0.1/t-manager/:accessCode/:topicId/flush-cache',
-		passport.authenticate('basic', { session: false }),
-		smtpController.flushCacheSMTP,
-		subsController.flushCache);
+
 	
 	
 	app.use(session({
