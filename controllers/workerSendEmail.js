@@ -35,6 +35,8 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 
 }).catch( (e) => { console.log( "%s Worker MongoDB ERRROR: %s", chalk.red('✗'), e ) } );
 
+const sleep = ( waitTimeInMs ) => new Promise( resolve => setTimeout( resolve, waitTimeInMs ) );
+
 async function init() {
 
 	// Ensure we have received all the worker data
@@ -42,7 +44,9 @@ async function init() {
 		throw new Error( "Worker: No email body" );
 	}
 	
-	
+	if ( !topicId ) {
+		throw new Error( "Worker: No topicId selected" );
+	}
 
 	/*
 	 * Get mailing notify information
@@ -64,7 +68,11 @@ async function init() {
 	let templateId,
 		notifyKey = topic.notifyKey;
 
-		
+	
+	if ( !topic.nTemplateMailingId ) {
+		throw new Error( "Worker: There is no mailing template associated with : " + topicId );
+	}
+
 	// Get the correct notify email template
 	if ( typeMailing === "msgUpdates" ) {
 		templateId = topic.nTemplateMailingId;
@@ -279,7 +287,3 @@ getConfirmedSubscriberAsArray = async ( topicId ) => {
 	
 	return docsItems;
 };
-
-
-
-
