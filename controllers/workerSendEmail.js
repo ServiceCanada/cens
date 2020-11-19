@@ -257,7 +257,7 @@ async function init() {
 		});
 		
 		// after 40, wait 1 second before to send the next 40 emails.
-		if ( i % 40 ) {
+		if ( i % 40 === 0 ) {
 			await sleep( 1000 );
 		}
 	}
