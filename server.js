@@ -214,19 +214,19 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 		
 	app.get('/api/v1/mailing/manage',
 		userController.isAuthenticated,
-		bodyParser.urlencoded({extended:true, limit: '250k'}),
+		bodyParser.urlencoded({extended:true, limit: '2mb'}),
 		mailingController.v_mailingManage);
 	app.post('/api/v1/mailing/create',
 		userController.isAuthenticated,
-		bodyParser.urlencoded({extended:true, limit: '250k'}),
+		bodyParser.urlencoded({extended:true, limit: '2mb'}),
 		mailingController.v_mailingCreate);
 	app.get('/api/v1/mailing/:mailingid/edit',
 		userController.isAuthenticated,
-		bodyParser.urlencoded({extended:true, limit: '250k'}),
+		bodyParser.urlencoded({extended:true, limit: '5mb'}),
 		mailingController.v_mailingEdit);
 	app.post('/api/v1/mailing/:mailingid/edit',
 		userController.isAuthenticated,
-		bodyParser.urlencoded({extended:true, limit: '1024k'}),
+		bodyParser.urlencoded({extended:true, limit: '5mb'}),
 		mailingController.v_mailingSave);
 	
 	app.get('/api/v1/mailing/:mailingid/history',
