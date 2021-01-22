@@ -9,3 +9,4 @@ Thumbs.db
 
 # Instance configuration files
 .env
+.project

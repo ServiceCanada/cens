@@ -10,6 +10,13 @@ services:
        mode: host
     networks:
      - x-notify-net
+  redis:
+    image: redis:6.0.1
+    container_name: x-notify-redis
+    ports:
+     - "6379:6379"
+    networks:
+     - x-notify-net
   x-notify:
     build: ./
     container_name: x-notify

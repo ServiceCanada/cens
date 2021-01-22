@@ -1,8 +1,6 @@
 /**
  * Module dependencies.
  */
-
-
 const express = require('express'); // HTTP server
 const compression = require('compression'); // gzip for the HTTP body
 const cors = require('cors'); // CORS
@@ -26,6 +24,7 @@ const bodyParser = require('body-parser');
 //const crypto = require('crypto'); // To encrypt Notify keys
 
 const MongoClient = require('mongodb').MongoClient;
+const notifyQueue = require('./notifyQueue.js');
 
 const processEnv = process.env;
 
@@ -115,6 +114,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	app.post('/subs/post',
 		bodyParser.urlencoded({extended:false, limit: '10kb'}),
 		subsController.addEmailPOST);
+	app.post('/subs/sendMailing', subsController.sendMailing);
 	// app.get('/api/v0.1/subs/email/getAll', subsController.getAll); // TODO: kept for later if we create a "subscription" management page.
 
 
@@ -122,9 +122,6 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	/**
 	 * Manager routes.
 	 */
-	app.get('/api/v0.1/t-manager/:topicId/stats',
-		passport.authenticate('basic', { session: false }),
-		managersController.getTopicStats);
 	app.get('/api/v0.1/t-manager/:accessCode/home',
 		passport.authenticate('basic', { session: false }),
 		managersController.serveHome);
@@ -132,10 +129,6 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 		passport.authenticate('basic', { session: false }),
 		bodyParser.urlencoded({extended:false, limit: '10kb'}),
 		managersController.createTopic);
-	app.get('/api/v0.1/t-manager/:accessCode/:topicId/flush-cache',
-		passport.authenticate('basic', { session: false }),
-		smtpController.flushCacheSMTP,
-		subsController.flushCache);
 	app.get('/api/v0.1/t-manager/:accessCode/:topicId',
 		passport.authenticate('basic', { session: false }),
 		managersController.getTopic);
@@ -165,6 +158,9 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	app.get('/api/v0.1/t-manager/:accessCode/:topicId/bulk/form',
 		passport.authenticate('basic', { session: false }),
 		managersController.serveBulkForm);
+	app.get('/api/v0.1/t-manager/:topicId/stats',
+		passport.authenticate('basic', { session: false }),
+		managersController.getTopicStats);
 	app.post('/api/v0.1/t-manager/:accessCode/:topicId/bulk/action',
 		passport.authenticate('basic', { session: false }),
 		bodyParser.urlencoded({extended:true, limit: '50mb'}),
@@ -186,7 +182,10 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	 * Admin routes.
 	 */
 	// app.get('/subs/remove_unconfirm/:subscode/:email', subsController.removeUnconfirmEmail);
-
+	app.get('/api/v0.1/t-manager/:accessCode/:topicId/flush-cache',
+		passport.authenticate('basic', { session: false }),
+		smtpController.flushCacheSMTP,
+		subsController.flushCache);
 	
 	
 	app.use(session({
@@ -214,19 +213,19 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 		
 	app.get('/api/v1/mailing/manage',
 		userController.isAuthenticated,
-		bodyParser.urlencoded({extended:true, limit: '2mb'}),
+		bodyParser.urlencoded({extended:true, limit: '250k'}),
 		mailingController.v_mailingManage);
 	app.post('/api/v1/mailing/create',
 		userController.isAuthenticated,
-		bodyParser.urlencoded({extended:true, limit: '2mb'}),
+		bodyParser.urlencoded({extended:true, limit: '250k'}),
 		mailingController.v_mailingCreate);
 	app.get('/api/v1/mailing/:mailingid/edit',
 		userController.isAuthenticated,
-		bodyParser.urlencoded({extended:true, limit: '5mb'}),
+		bodyParser.urlencoded({extended:true, limit: '250k'}),
 		mailingController.v_mailingEdit);
 	app.post('/api/v1/mailing/:mailingid/edit',
 		userController.isAuthenticated,
-		bodyParser.urlencoded({extended:true, limit: '5mb'}),
+		bodyParser.urlencoded({extended:true, limit: '1024k'}),
 		mailingController.v_mailingSave);
 	
 	app.get('/api/v1/mailing/:mailingid/history',
@@ -244,9 +243,6 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	app.get('/api/v1/mailing/:mailingid/sendToSubs',
 		userController.isAuthenticated,
 		mailingController.v_mailingSendToSub);
-	app.get('/api/v1/mailing/stats',
-		userController.isAuthenticated,
-		mailingController.v_mailingGetTopicStats);
 	
 	/**
 	 * SMTP Mail routes.
@@ -256,6 +252,12 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 		cors(_corsSettings),
 		bodyParser.urlencoded({extended:false, limit: '10kb'}),
 		smtpController.sendMailPOST);
+
+	/**
+	 * Bull routes
+	 */
+	app.use('/admin/queues', notifyQueue.UI);
+
 
 	/**
 	 * JWT Authentication
