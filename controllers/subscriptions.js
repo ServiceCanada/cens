@@ -7,11 +7,12 @@
  ===========================*/
 
 const NotifyClient = require('notifications-node-client').NotifyClient; // https://docs.notifications.service.gov.uk/node.html#node-js-client-documentation
-
 const entities = require("entities");
+const ObjectId = require('mongodb').ObjectId;
+const Queue = require('bull');
+const chalk = require('chalk');
 
 const dbConn = module.parent.exports.dbConn;
-const ObjectId = require('mongodb').ObjectId;
 
 const processEnv = process.env,
 	_devLog = !!!processEnv.prodNoLog,
@@ -31,6 +32,19 @@ const processEnv = process.env,
 	_flushAccessCode2 = processEnv.flushAccessCode2,
 	_notifyUsTimeLimit = processEnv.notifyUsTimeLimit || 180000,
 	_subsLinkSuffix = processEnv.subsLinkSuffix || "853e0212b92a127";
+
+const notifyQueue = new Queue('sendMail',
+		{
+			redis:{
+				host:'127.0.0.1',
+				port: 6379
+			}
+		}
+		);
+
+notifyQueue.process(async job => {
+	return await sendEmailViaNotify(job.data.email, job.data.templateId, job.data.personalisation, job.data.notifyKey);
+})
 
 let notifyCached = [],
 	notifyCachedIndexes = [],
@@ -70,11 +84,11 @@ generateKey = () => {
 // @return; a JSON response 
 //
 exports.addEmail = async ( req, res, next ) => {
-	
-	const reqbody = req.body,
-		topicId = reqbody.tid,
-		currDate = new Date(),
-		nBfDate = new Date();
+
+	const 	reqbody = req.body,
+			topicId = reqbody.tid,
+			currDate = new Date(),
+			nBfDate = new Date();
 	let email = reqbody.eml.toLowerCase() || "";
 
 	// Validate if email is the good format (something@something.tld)
@@ -89,9 +103,9 @@ exports.addEmail = async ( req, res, next ) => {
 
 	// Get the topic
 	const topic = await getTopic( topicId );
-	
+
 	try {
-		
+
 		// No topic = no good
 		if ( !topic ) {
 			console.log( "addEmail: no topic: " + topicId );
@@ -101,47 +115,45 @@ exports.addEmail = async ( req, res, next ) => {
 
 		// Check if the email is in the "SubsExist"
 		await dbConn.collection( "subsExist" ).insertOne( 
-			{
-				e: email,
-				t: topicId
-			}).then( async ( docSExist ) => {
+				{
+					e: email,
+					t: topicId
+				}).then( async ( docSExist ) => {
+			// The email is not subscribed for that topic
+			// Generate an simple Unique Code
+			const confirmCode	= docSExist.insertedId,
+						tId 	= topic.templateId,
+						nKey 	= topic.notifyKey;
 
-				// The email is not subscribed for that topic
-				// Generate an simple Unique Code
-				const confirmCode = docSExist.insertedId,
-					tId = topic.templateId,
-					nKey = topic.notifyKey;
-				
-				// Insert in subsToConfirm
-				await dbConn.collection( "subsUnconfirmed" ).insertOne( {
-					email: email,
-					subscode: confirmCode,
-					topicId: topicId,
-					notBefore: nBfDate.setMinutes( currDate.getMinutes() + _nbMinutesBF ),
-					createAt: currDate,
-					tId: tId,
-					nKey: nKey,
-					cURL: topic.confirmURL
-				}).catch( ( e ) => { 
-					console.log( "addEmail: subsUnconfirmed" );
-					console.log( e );
-				});
-
-				// Send confirm email - async
-				sendNotifyConfirmEmail( email, confirmCode.toHexString(), tId, nKey );
-				
-				if ( _bypassSubscode ) {
-					res.subscode = confirmCode.toHexString();
-				}
-				
-				res.json( _successJSO );
-				
-			}).catch( ( ) => {
-			
-				// The email was either subscribed-pending or subscribed confirmed
-				resendEmailNotify( email, topicId, currDate );
-				res.json( _successJSO );
+			// Insert in subsUnconfirmed
+			await dbConn.collection( "subsUnconfirmed" ).insertOne( {
+				email: email,
+				subscode: confirmCode,
+				topicId: topicId,
+				notBefore: nBfDate.setMinutes( currDate.getMinutes() + _nbMinutesBF ),
+				createAt: currDate,
+				tId: tId,
+				nKey: nKey,
+				cURL: topic.confirmURL
+			}).catch( ( e ) => { 
+				console.log( "addEmail: subsUnconfirmed insertOne error" );
+				console.log( e );
 			});
+
+			// Send confirm email - async
+			sendNotifyConfirmEmail( email, topic.confirmURL + confirmCode + "/" + _subsLinkSuffix, tId, nKey );
+
+			if ( _bypassSubscode ) {
+				res.subscode = confirmCode.toHexString();
+			}
+
+			res.json( _successJSO );
+
+		}).catch( ( ) => {
+			// The email was either subscribed-pending or subscribed confirmed
+			resendEmailNotify( email, topicId, currDate );
+			res.json( _successJSO );
+		});
 
 	} catch ( e ) { 
 
@@ -205,7 +217,7 @@ exports.addEmailPOST = async ( req, res, next ) => {
 			res.redirect( topic.inputErrURL );
 			return;
 		}
-
+		
 		// URL Decrypt the email. It is double encoded like: "&amp;#39;" should be "&#39;" which should be "'"
 		email = await entities.decodeXML( await entities.decodeXML( email ) );
 
@@ -215,7 +227,6 @@ exports.addEmailPOST = async ( req, res, next ) => {
 				e: email,
 				t: topicId
 			}).then( async ( docSExist ) => {
-
 				// The email is not subscribed for that topic
 				// Generate an simple Unique Code
 				const confirmCode = docSExist.insertedId,
@@ -238,7 +249,7 @@ exports.addEmailPOST = async ( req, res, next ) => {
 				});
 
 				// Send confirm email - async
-				sendNotifyConfirmEmail( email, confirmCode.toHexString(), tId, nKey );
+				sendNotifyConfirmEmail( email, topic.confirmURL + confirmCode + "/" + _subsLinkSuffix, tId, nKey );
 				
 				if ( _bypassSubscode ) {
 					res.subscode = confirmCode.toHexString();
@@ -613,8 +624,7 @@ resendEmailNotify = ( email, topicId, currDate ) => {
 
 			// To support deprecated query where the email was included in the URL, the subsequent URL can be made permanent after 60 days of it's deployment date
 			let subscode = ( docValue.subscode.length ? docValue.subscode : docValue.subscode.toHexString() );
-			
-			await docValue && sendNotifyConfirmEmail( email, subscode, docValue.tId, docValue.nKey );
+			await docValue && sendNotifyConfirmEmail( email, docValue.cURL + subscode + "/" + _subsLinkSuffix, docValue.tId, docValue.nKey );
 
 			
 		})
@@ -677,23 +687,25 @@ getRedirectForRecents = async ( query, mustBeSubscribed ) => {
 //
 // Send an email through Notify API
 //
-sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => {
+sendEmailViaNotify = async ( email, templateId, personalisation, notifyKey ) => {
+	let confirmCode = personalisation.confirm_link || null;
 	
-	if ( !NotifyKey || !templateId || !email || !confirmCode ) {
+	if ( !notifyKey || !templateId || !email || !personalisation ) {
 		return true;
 	}
-	
+
 	// There is 1 personalisation, the confirm links
 	// /subs/confirm/:subscode/:email
 
-	let notifyClient = notifyCached[ NotifyKey ];
+	let notifyClient = notifyCached[ notifyKey ];
 
-	
+
 	if ( !notifyClient ) {
-		notifyClient = new NotifyClient( _notifyEndPoint, NotifyKey );
-		notifyCached[ NotifyKey ] = notifyClient;
-		notifyCachedIndexes.push( NotifyKey );
-		
+		//console.log("Creating new notifyClient-> \n\tnotifyEndPoint: " + _notifyEndPoint + "\n\tnotifyKey: " + notifyKey);
+		notifyClient = new NotifyClient( _notifyEndPoint, notifyKey );
+		notifyCached[ notifyKey ] = notifyClient;
+		notifyCachedIndexes.push( notifyKey );
+
 		// Limit the cache to the last x instance of Notify
 		if ( notifyCachedIndexes.length > _notifyCacheLimit ) {
 			delete notifyCached[ notifyCachedIndexes.shift() ];
@@ -702,26 +714,25 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 	}
 	
 	
-	// To support deprecated query where the email was included in the URL, the subsequent URL can be made permanent after 60 days of it's deployment date
-	const codeURL = ( confirmCode.length ? confirmCode : confirmCode.toHexSTring() );
 	
 	!_bypassSubscode && notifyClient.sendEmail( templateId, email, 
-		{
-			personalisation: { confirm_link: _confirmBaseURL + codeURL + "/" + _subsLinkSuffix },
-			reference: "x-notify_subs_confirm"
-		})
-		.catch( ( e ) => {
-			// Log the Notify errors
+			{
+				personalisation: personalisation,
+				reference: "x-notify_subs_confirm"
+			})
+	.catch( ( e ) => {
+		// Log the Notify errors
 
-			const currDate = new Date(),
-				currDateTime = currDate.getTime(),
-				errDetails = e.error.errors[0],
-				statusCode = e.error.status_code,
-				msg = errDetails.message;
-			
-			
-			
-			if ( statusCode === 400 && msg.indexOf( "email_address" ) !== -1 ) {
+		console.log(e.error);
+		const currDate = new Date(),
+		currDateTime = currDate.getTime(),
+		errDetails = e.error.errors ? e.error.errors[0] : null,
+		statusCode = e.error.status_code,
+		msg = errDetails ? errDetails.message : null;
+
+
+
+		if ( statusCode === 400 && msg.indexOf( "email_address" ) !== -1 ) {
 
 				//
 				// We need to remove that user and log it
@@ -747,11 +758,11 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 						code: confirmCode,
 						email: email
 					}
-				).catch( (e2) => {
-					console.log( "sendNotifyConfirmEmail: notify_badEmail_logs: " + confirmCode );
-					console.log( e2 );
-					console.log( e );
-				});
+					).catch( (e2) => {
+				console.log( "sendNotifyConfirmEmail: notify_badEmail_logs: " + confirmCode );
+				console.log( e2 );
+				console.log( e );
+			});
 
 			} else if ( statusCode === 429 ) {
 			
@@ -799,21 +810,21 @@ sendNotifyConfirmEmail = async ( email, confirmCode, templateId, NotifyKey ) => 
 					{
 						createdAt: currDate,
 						templateId: templateId,
-						e: errDetails.error,
+						e: errDetails ? errDetails.error :null,
 						msg: msg,
 						statusCode: statusCode,
 						err: e.toString(),
 						code: confirmCode
 					}
-				).catch( (e2) => {
-					console.log( "sendNotifyConfirmEmail: notify_logs: " + confirmCode );
-					console.log( e2 );
-					console.log( e );
-				});
-			}
-		
-			console.log( "sendNotifyConfirmEmail: sendEmail " + confirmCode );
-		});
+					).catch( (e2) => {
+				console.log( "sendNotifyConfirmEmail: notify_logs: " + confirmCode );
+				console.log( e2 );
+				console.log( e );
+			});
+		}
+
+	});
+	
 }
 
 //
@@ -1060,8 +1071,53 @@ exports.simulateAddPost = async ( req, res, next ) => {
 			}
 		}, {
 			redirect: function(){}
+			//this function is forthcoming in the My Mailing management
 		} );
 	
 	res.json( { test: "ok" } );
 }
 
+/**
+ * This is the REST endpoint handler function for queuing a mailing with Notify
+ */
+exports.sendMailing = async ( req, res, next ) => {
+	const email = req.body.email,
+	templateId = req.body.templateId,
+	personalisation = req.body.personalisation,
+	notifyKey = req.body.notifyKey;
+
+	notifyQueue.add({
+						email:email,
+						templateId:templateId,
+						personalisation:personalisation,
+						notifyKey:notifyKey
+					},
+				   	{
+						priority:10
+					}
+	);
+
+
+	res.json( _successJSO );
+}
+
+/**
+ * This is the function for queuing a subscriber confirmation email
+ * send via notify.
+ */
+sendNotifyConfirmEmail = async (email, confirmLink, templateId, notifyKey) =>{
+	const personalisation = {
+								confirm_link: confirmLink
+							};
+
+	notifyQueue.add({
+						email:email,
+						templateId:templateId,
+						personalisation:personalisation,
+						notifyKey:notifyKey
+					},
+				   	{
+						priority:5
+					}
+	);
+}

@@ -731,7 +731,7 @@ exports.getTopic = async ( req, res, next ) => {
 			'</html>' 
 		);
 	}else{
-		var topicDetailsTemplate = await fsPromises.readFile('views/topics_details.mustache', 'UTF-8');
+		var topicDetailsTemplate = await fsPromises.readFile('views/topic_details.mustache', 'UTF-8');
 		topicDetailsTemplate = mustache.render(topicDetailsTemplate,
 							{
 								createdAt: topicDetails.createdAt,
@@ -781,7 +781,7 @@ exports.getTopic = async ( req, res, next ) => {
 			'		<input type="text" id="inputErrorUrl" name="put_inputErrorUrl" value="' + doc.inputErrURL + '"><br><br>\n' +
 			'			</td>\n' +
 			'			<td>\n' +
-			'				<div id="topics_details">' + topicDetailsTemplate + '</div>\n' +
+			'				<div id="topic_details">' + topicDetailsTemplate + '</div>\n' +
 			'			</td>\n' +
 			'			<td>\n' +
 			'				<div id="smtp_config">' + smtpConfigTemplate + '</div>\n' +
