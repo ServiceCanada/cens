@@ -154,7 +154,7 @@ topics_details
 * langAtl: Alternative language equivalent at this topic
 * retrieving: Array of <managersAccess>
 * nServiceId: Service ID associated with the notify key
-* approvers: Array of <approvers>
+* approvers: Array of `<approvers>` string email
 
 subsExist
 * e: email
