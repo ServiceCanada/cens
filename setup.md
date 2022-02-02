@@ -145,16 +145,16 @@ topics
 
 topics_details
 * _id: topicId
-* accessCode: Array of <string>
+* accessCode: Array of `<string>`
 * createdAt
 * lastUpdated
 * groupName: Name of the department or section
 * description: Short description about this topic
 * lang: Language of this topic
 * langAtl: Alternative language equivalent at this topic
-* retrieving: Array of <managersAccess>
+* retrieving: Array of `<managersAccess>` sub documents
 * nServiceId: Service ID associated with the notify key
-* approvers: Array of `<approvers>` string email
+* approvers: Array of `<approvers>` sub documents
 
 subsExist
 * e: email
@@ -185,10 +185,10 @@ subs_logs
 * _id: email or phone
 * createdAt
 * lastUpdated
-* confirmEmail: Array of <subsInfo>
-* subsEmail: Array of <subsInfo>, on subscription
-* unsubsEmail: Array of <subsInfo>
-* resendEmail: Array of <subInfoResend>	
+* confirmEmail: Array of `<subsInfo>` sub documents
+* subsEmail: Array of `<subsInfo>` sub documents, on subscription
+* unsubsEmail: Array of `<subsInfo>` sub documents
+* resendEmail: Array of `<subInfoResend>` sub documents	
 
 subsRecents
 * email
