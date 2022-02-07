@@ -1,4 +1,6 @@
-# Instructions
+# Canada.ca Email Notification Service
+
+Subscription service to send mass mailing via the notification service from CDS. 
 
 [How to do the setup](setup.md)
 
