@@ -1,4 +1,4 @@
-# Canada.ca Email Notification Service
+# Canada.ca Email Notification Services
 
 Subscription service to send mass mailing via the notification service from CDS. 
 
