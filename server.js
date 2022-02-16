@@ -227,11 +227,13 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 		userController.isAuthenticated,
 		bodyParser.urlencoded({extended:true, limit: '1024k'}),
 		mailingController.v_mailingSave);
-	
 	app.get('/api/v1/mailing/:mailingid/history',
 		userController.isAuthenticated,
 		mailingController.v_mailingHistory);
-	app.get('/api/v1/mailing/:mailingid/approval',
+	app.get('/api/v1/mailing/:mailingid/approval',  //this is deperecated URL
+		userController.isAuthenticated,
+		mailingController.v_mailingApproval);
+	app.get('/api/v1/mailing/:mailingid/:subscode/approval',
 		userController.isAuthenticated,
 		mailingController.v_mailingApproval);
 	app.get('/api/v1/mailing/:mailingid/approved',

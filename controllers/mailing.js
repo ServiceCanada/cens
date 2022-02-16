@@ -155,6 +155,28 @@ async function mailingSave ( mailingId, title, subject, body, comments ) {
 }
 exports.mailingSave = mailingSave;
 
+async function mailingApprovers( mailingId ) {
+	const mailingInfo = await mailingUpdate( mailingId, _mailingState.completed );
+	// get approvers for mailingId
+	let tDetails = await dbConn.collection( "topics_details" ).findOne( 
+		{ _id: mailingInfo.topicId },
+		{
+			projection: {
+				approvers: 1
+			}
+		}
+	);
+
+	if ( !tDetails || !tDetails.approvers ) {
+		console.log( "mailingSendToApproval-No approvals email for : " + mailingInfo.topicId );
+		throw new Error( "No approvals email for : " + mailingInfo.topicId );
+	}
+
+	return tDetails.approvers
+}
+exports.mailingApprovers = mailingApprovers;
+
+
 exports.mailingSaveTest = async ( email, mailingId, title, subject, body, comments ) => {
 	// Send a test email to the current logged user email
 	// Set state to "draft"
@@ -173,31 +195,22 @@ exports.mailingSaveTest = async ( email, mailingId, title, subject, body, commen
 	return rSave;
 }
 
-exports.mailingApproval = async ( mailingId ) => {
+exports.mailingApproval = async ( mailingId, subscode ) => {
 	// Send a test email to the predefined list of emails
 	// Set state to "completed"
-	
-	const mailingInfo = await mailingUpdate( mailingId, _mailingState.completed );
 
-	
-	// Send the mailing to the "approval email list"
-	let tDetails = await dbConn.collection( "topics_details" ).findOne( 
-		{
-			_id: mailingInfo.topicId
-		},
-		{
-			projection: {
-				approvers: 1
-			}
+	const mailingInfo = await mailingUpdate( mailingId, _mailingState.completed );
+	let approvers = await mailingApprovers ( mailingId );
+
+	let mailingApproversList = [];
+	approvers && approvers.forEach( function( approver ) { 
+		if ( subscode === "0" || approver.subscode === subscode ) { 
+			mailingApproversList.push (approver);
 		}
-	);
-	
-	if ( !tDetails || !tDetails.approvers ) {
-		console.log( "mailingSendToApproval-No approvals email for : " + mailingInfo.topicId );
-		throw new Error( "No approvals email for : " + mailingInfo.topicId );
-	}
-	
-	sendMailing ( tDetails.approvers, mailingInfo._id, mailingInfo.topicId, mailingInfo.subject, mailingInfo.body );
+	});
+
+	// Send the mailinvag to the "approval email list"
+	sendMailing ( mailingApproversList, mailingInfo._id, mailingInfo.topicId, mailingInfo.subject, mailingInfo.body );
 }
 
 exports.mailingApproved = async ( mailingId ) => {
