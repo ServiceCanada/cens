@@ -60,7 +60,6 @@ exports.v_mailingLogin = async ( req, res, next ) => {
 exports.v_mailingEdit = async ( req, res, next ) => {
 	// Input: MailingID
 	
-
 	try {
 		const mailingid = req.params.mailingid;
 	
@@ -95,13 +94,14 @@ exports.v_mailingEdit = async ( req, res, next ) => {
 		
 		}
 		
-		
+		//add names to documents structure
+		let mApprovers = await mailing.mailingApprovers( mailingid );
+		//forEach()
 		// Parse the body
 		jsBody = { jsBody: mailingData.body.replace( /\r/g, "").replace( /\n/g, "\\n" ) };
-		
+
 		// Render the page
-		res.status( 200 ).send( await renderTemplate( "mailingEdit.html", Object.assign( {}, mailingData, btnControler, jsBody ) ) );
-		
+		res.status( 200 ).send( await renderTemplate( "mailingEdit.html", Object.assign( {}, mailingData, btnControler, jsBody, { mApprovers : mApprovers } ) ));
 	} catch ( e ){
 		
 		// Return mailingManager + Error message
@@ -208,18 +208,19 @@ exports.v_mailingCancelled = async ( req, res, next ) => {
 	res.redirect( _baseRedirFolder + mailingId + "/edit" );
 }
 
-
 exports.v_mailingApproval = async ( req, res, next ) => {
 	// Send a test email to the predefined list of emails
 	// Set state to "completed"
 	
 	const mailingId = req.params.mailingid;
+	const subscode = req.params.subscode ? req.params.subscode : "0";
+
 	
-	await mailing.mailingApproval( mailingId );
-	
+	await mailing.mailingApproval( mailingId, subscode );
+
 	res.redirect( _baseRedirFolder + mailingId + "/edit" );
-	
 }
+
 
 exports.v_mailingApproved = async ( req, res, next ) => {
 	// Need to be in current state "completed"
