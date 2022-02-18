@@ -234,6 +234,7 @@ notify_tooManyReq_logs
 approvers
 * email
 * subscode
+* name
 
 ### Mailing
 

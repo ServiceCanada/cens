@@ -94,7 +94,6 @@ exports.v_mailingEdit = async ( req, res, next ) => {
 		
 		}
 		
-		//add names to documents structure
 		let mApprovers = await mailing.mailingApprovers( mailingid );
 		//forEach()
 		// Parse the body
@@ -182,11 +181,13 @@ exports.v_mailingSave = async ( req, res, next ) => {
 		
 		mailingData.msg = msg; // status message		
 		
+		let mApprovers = await mailing.mailingApprovers( mailingid );
+
 		// Parse the body
 		jsBody = { jsBody: mailingData.body.replace( /\r/g, "").replace( /\n/g, "\\n" ) };
 		
 		// Render the page
-		res.status( 200 ).send( await renderTemplate( "mailingEdit.html", Object.assign( {}, mailingData, jsBody ) ) );
+		res.status( 200 ).send( await renderTemplate( "mailingEdit.html", Object.assign( {}, mailingData, jsBody, { mApprovers: mApprovers} ) ) );
 		
 		
 	} catch ( e ){
