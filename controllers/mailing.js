@@ -21,8 +21,11 @@ const _mailingState = {
 	sent: "sent"
 
 };
+exports.mailingState = _mailingState;
 
-exports.mailingState = _mailingState
+const emailNoticeSaveAndTest = "^**This is your email notification test / Ceci est votre test de notification par courriel**\n\n";
+const emailNoticeForApproval = "^**Your approval is required for this notification email / Votre approbation est requise pour ce courriel de notification**\n\n";
+
 
 /*
  * Get list of Mailing for the given topics
@@ -190,7 +193,7 @@ exports.mailingSaveTest = async ( email, mailingId, title, subject, body, commen
 				email: email,
 				subscode: "mailingSaveAndTest"
 			}
-		], mailingId, rSave.topicId, subject, body );
+		], mailingId, rSave.topicId, subject, emailNoticeSaveAndTest + body );
 
 	return rSave;
 }
@@ -210,7 +213,7 @@ exports.mailingApproval = async ( mailingId, subscode ) => {
 	});
 
 	// Send the mailinvag to the "approval email list"
-	sendMailing ( mailingApproversList, mailingInfo._id, mailingInfo.topicId, mailingInfo.subject, mailingInfo.body );
+	sendMailing ( mailingApproversList, mailingInfo._id, mailingInfo.topicId, mailingInfo.subject, emailNoticeForApproval + mailingInfo.body );
 }
 
 exports.mailingApproved = async ( mailingId ) => {
