@@ -59,70 +59,81 @@ Server will run at `0.0.0.0:8080` by default.
 
 ## Environment variables
 
-`cors` Set up CORS headers, method and origin for specific endpoints.
-`errorPage` URL to redirect when error occur, like invalid link. Default: https://canada.ca
-`confirmBaseURL` Base URL to follow in order to confirm the validity of an email address for a given topic. Default: `https://apps.canada.ca/x-notify/subs/confirm/`
-`removeURL` Base URL to follow in order to unsubscribe from a topic. Default: `https://apps.canada.ca/x-notify/subs/remove/`
-`successJSO` JavaScript Object returned on successful JSON API call. Default: `{ statusCode: 200, ok: 1 }`
-`cErrorsJSO` JavaScript Object returned on client error, like bad email format or missing parameter. Default `{ statusCode: 400, bad: 1, msg: "Bad request" }`
-`sErrorsJSO` JavaScript Object returned on client error, like MongoDB can't connect. Default: `{ statusCode: 500, err: 1 }`
-`notifyEndPoint` Notify end point. Default: `https://api.notification.alpha.canada.ca`
-`notSendBefore` Number of minute before to accept a resend email request. Default: `25`
+* `cors` Set up CORS headers, method and origin for specific endpoints.
+* `errorPage` URL to redirect when error occur, like invalid link. Default: https://canada.ca
+* `confirmBaseURL` Base URL to follow in order to confirm the validity of an email address for a given topic. Default: `https://apps.canada.ca/x-notify/subs/confirm/`
+* `removeURL` Base URL to follow in order to unsubscribe from a topic. Default: `https://apps.canada.ca/x-notify/subs/remove/`
+* `successJSO` JavaScript Object returned on successful JSON API call. Default: `{ statusCode: 200, ok: 1 }`
+* `cErrorsJSO` JavaScript Object returned on client error, like bad email format or missing parameter. Default `{ statusCode: 400, bad: 1, msg: "Bad request" }`
+* `sErrorsJSO` JavaScript Object returned on client error, like MongoDB can't connect. Default: `{ statusCode: 500, err: 1 }`
+* `notifyEndPoint` Notify end point. Default: `https://api.notification.alpha.canada.ca`
+* `notSendBefore` Number of minute before to accept a resend email request. Default: `25`
 
-`Host` URL of the host server. Default: `0.0.0.0`
-`Port` Port of the server. Default: `8080`
-`ServerStatusPath` Path to where we can see the server status. Default: `/admin/sys-status`
-`prodNoLog` Do not log transactions in subs_log collection if in prod mode. Default: `undefined`
+* `Host` URL of the host server. Default: `0.0.0.0`
+* `Port` Port of the server. Default: `8080`
+* `ServerStatusPath` Path to where we can see the server status. Default: `/admin/sys-status`
+* `prodNoLog` Do not log transactions in subs_log collection if in prod mode. Default: `undefined`
 
-`NODE_ENV` Error logging for the running environment. Set to `prod` for production Default: `development`
+* `NODE_ENV` Error logging for the running environment. Set to `prod` for production Default: `development`
 
-`MONGODB_URI` MongoDB URI. Default: none, it must be set
-`MONGODB_NAME` MongoDB database name. Default: `subs`
+* `MONGODB_URI` MongoDB URI. Default: none, it must be set
+* `MONGODB_NAME` MongoDB database name. Default: `subs`
 
-`user` User name to access at the service. Default: none, it must be set
-`password` Password to access at the service. Default: none, it must be set
+* `user` User name to access at the service. Default: none, it must be set
+* `password` Password to access at the service. Default: none, it must be set
 
-`keySalt` Add salt to key encoding. Default: `5417`
-`validHosts` Array of valid referrer. Default: `["localhost:8080"]`
-`subscode` Bypasses subscode and Notify client if set. Default: `undefined`
+* `keySalt` Add salt to key encoding. Default: `5417`
+* `validHosts` Array of valid referrer. Default: `["localhost:8080"]`
+* `subscode` Bypasses subscode and Notify client if set. Default: `undefined`
 
-`topicCacheLimit`  Cache limit of number topic kept in memory. Default: `50`
-`notifyCacheLimit` Cache limit of number Notify client kept in memory. Default: `40`
+* `topicCacheLimit`  Cache limit of number topic kept in memory. Default: `50`
+* `notifyCacheLimit` Cache limit of number Notify client kept in memory. Default: `40`
 
-`flushAccessCode` Private code to allow to flush the cache. Default: undefined
-`flushAccessCode2` Private second code to allow to flush the cache. Default: undefined
+* `flushAccessCode` Private code to allow to flush the cache. Default: undefined
+* `flushAccessCode2` Private second code to allow to flush the cache. Default: undefined
 
-`convertSubCode` Migration of old subcode to one created with an uid during the download csv files. Default: false
+* `convertSubCode` Migration of old subcode to one created with an uid during the download csv files. Default: false
 
-`minBeforeToUploadOnly` Minimum of subscription before to switch to the upload only to Notify feature. Default: `50000`
+* `minBeforeToUploadOnly` Minimum of subscription before to switch to the upload only to Notify feature. Default: `50000`
 
-`transport` Custom SMTP transporter configs. Default: none
+* `transport` Custom SMTP transporter configs. Default: none
 
 Setting for frequency of notifying us - all the following MUST be set:
-`notifyUsTimeLimit` Number of millisecond to wait before to send again a email message `180000`
-`OUR_NOTIFY_END_POINT` Notify end point to us to notify us. Default: Nothing, but we can reuse the same as `notifyEndPoint`
-`OUR_NOTIFY_KEY` Our private Notify key to communicate with us. Default: Nothing
-`OUR_NOTIFY_SEND_EMAIL_TO` String array of emails to which to send a notification. Default: `[]`
-`OUR_NOTIFY_TEMPLATE_ID` Notify template ID to use when communicating with us.
+* `notifyUsTimeLimit` Number of millisecond to wait before to send again a email message `180000`
+* `OUR_NOTIFY_END_POINT` Notify end point to us to notify us. Default: Nothing, but we can reuse the same as `notifyEndPoint`
+* `OUR_NOTIFY_KEY` Our private Notify key to communicate with us. Default: Nothing
+* `OUR_NOTIFY_SEND_EMAIL_TO` String array of emails to which to send a notification. Default: `[]`
+* `OUR_NOTIFY_TEMPLATE_ID` Notify template ID to use when communicating with us.
 
 
 50k automation upload
-`CDS_NOTIFY_END_POINT` Notify end point to notify CDS. Default: Nothing, but we can reuse the same as `notifyEndPoint`
-`CDS_NOTIFY_KEY` CDS Notify key to communicate let them know we completed the upload. Default: Nothing
-`CDS_NOTIFY_SEND_EMAIL_TO` String array of emails to which to send a notification to CDS. Default: `[]`
-`CDS_NOTIFY_TEMPLATE_ID` Notify template ID to use when communicating with CDS.
+* `CDS_NOTIFY_END_POINT` Notify end point to notify CDS. Default: Nothing, but we can reuse the same as `notifyEndPoint`
+* `CDS_NOTIFY_KEY` CDS Notify key to communicate let them know we completed the upload. Default: Nothing
+* `CDS_NOTIFY_SEND_EMAIL_TO` String array of emails to which to send a notification to CDS. Default: `[]`
+* `CDS_NOTIFY_TEMPLATE_ID` Notify template ID to use when communicating with CDS.
 
-`AWS_ACCESS_KEY` AWS access key for S3, provided by CDS
-`AWS_SECRET_ACCESS_KEY` AWS secret access key for S3, provided by CDS
-`AWS_BUCKET` AWS bucket name to use for the upload 
+* `AWS_ACCESS_KEY` AWS access key for S3, provided by CDS
+* `AWS_SECRET_ACCESS_KEY` AWS secret access key for S3, provided by CDS
+* `AWS_BUCKET` AWS bucket name to use for the upload
 
 Note: We need to set the Service ID associated to the topic details (field: `nServiceId`) otherwise the file name will start with "test-". We can extract that number from the Notify API Key they have provided, it is `apikey.substring(apikey.length - 73, apikey.length - 37)`
 
 
-`subsLinkSuffix` Suffix buffer URL parameter for when we send confirm/remove link. Default: "853e0212b92a127"
-`jwtSecretAllSubsForTopic` This is the secret key necessary for authentication via JWT to the confirmedSubscribers service
+* `subsLinkSuffix` Suffix buffer URL parameter for when we send confirm/remove link. Default: "853e0212b92a127"
+* `jwtSecretAllSubsForTopic` This is the secret key necessary for authentication via JWT to the confirmedSubscribers service
 
-`baseFolder` Base folder where the application run. ex: "/x-notify" Default: undefined
+* `baseFolder` Base folder where the application run. ex: "/x-notify" Default: undefined
+
+
+### REDIS Default Configuration
+* `REDIS_ENV` Set environment value for Redis. Default: `stage` and `production` which would leverage the redis-sentinel in production environment
+* `REDIS_URI` Redis URI. Default: `x-notify-redis`
+* `REDIS_PORT` Port of Redis server. Default: `6379`
+* `REDIS_SENTINEL_1_URI` Redis Sentinel 1 URI. Default: `127.0.0.1`
+* `REDIS_SENTINEL_1_PORT` Redis Sentinel 1 PORT. Default: `26379`
+* `REDIS_SENTINEL_2_URI` Redis Sentinel 2 URI. Default `127.0.0.1`
+* `REDIS_SENTINEL_2_PORT` Redis Sentinel 2 PORT. Default: `26379`
+* `REDIS_MASTER_NAME` Redis master name Default: `x-notify-master`
 
 ## Collections
 
