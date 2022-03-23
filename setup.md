@@ -97,6 +97,7 @@ Server will run at `0.0.0.0:8080` by default.
 * `minBeforeToUploadOnly` Minimum of subscription before to switch to the upload only to Notify feature. Default: `50000`
 
 * `transport` Custom SMTP transporter configs. Default: none
+* `COMPLETED_JOBS_TO_KEEP` Max number of complete to be kept in Queue. Default: 300
 
 Setting for frequency of notifying us - all the following MUST be set:
 * `notifyUsTimeLimit` Number of millisecond to wait before to send again a email message `180000`

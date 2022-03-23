@@ -42,6 +42,7 @@ const redisSentinel2Uri = process.env.REDIS_SENTINEL_2_URI || '127.0.0.1';
 const redisSentinel2Port = process.env.REDIS_SENTINEL_2_PORT || '26379';
 const redisMasterName = process.env.REDIS_MASTER_NAME || 'x-notify-master';
 
+var maxCompletedJobs = process.env.COMPLETED_JOBS_TO_KEEP || 300;
 
 let redisConf = {};
 if (process.env.NODE_ENV === 'prod') {
@@ -1117,6 +1118,9 @@ exports.sendMailing = async ( req, res, next ) => {
 					},
 				   	{
 						priority:10
+					},
+					{
+						removeOnComplete: maxCompletedJobs
 					}
 	);
 
@@ -1141,6 +1145,9 @@ sendNotifyConfirmEmail = async (email, confirmLink, templateId, notifyKey) =>{
 					},
 				   	{
 						priority:5
+					},
+					{
+						removeOnComplete: maxCompletedJobs
 					}
 	);
 }
