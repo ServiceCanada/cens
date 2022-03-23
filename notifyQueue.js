@@ -11,7 +11,6 @@ const redisSentinel2Uri = process.env.REDIS_SENTINEL_2_URI || '127.0.0.1';
 const redisSentinel2Port = process.env.REDIS_SENTINEL_2_PORT || '26379';
 const redisMasterName = process.env.REDIS_MASTER_NAME || 'x-notify-master';
 
-
 let redisConf = {};
 if (process.env.NODE_ENV === 'prod') {
 	redisConf = {
