@@ -126,6 +126,26 @@ db.topics_details.insertOne( {
 })
 ```
 
+Create a topic details, with approvers
+
+```
+db.topics_details.insertOne( {
+    _id: "test",
+	createdAt: ISODate( "2022-03-30T00:00:00.000-04:00" ),
+	lastUpdated: ISODate( "2022-03-30T00:00:00.000-04:00" ),
+	groupName: "Department Name",
+	description: "Used for this service, related to request #",
+	lang: "en",
+    approvers: [
+        {
+            email: "pierre@example.com",
+            subscode: "for_your_approval",
+            name: "Pierre"
+        }
+        ]
+})
+```
+
 Remove a user from the subs
 
 ```
@@ -138,6 +158,19 @@ db.topics.updateOne(
 	});
 ```
 
+Create a user in the mailing
+
+```
+db.users.insertOne( {
+	"name" : "test",
+	"email" : "pierre@example.com",
+	"accessToTopicId" : [
+		"test"
+	],
+	"pass" : "<a plain text password>"
+})
+
+```
 
 ## Creation of new topic
 
@@ -154,6 +187,97 @@ db.topics.updateOne(
 ## Mongo Indexes and schema
 
 todo
+
+## GC Notification setup
+
+1. Create an account with [GC Notification](https://notification.canada.ca) or from a equivalent service.
+2. Create new service 
+3. Create an email template to send confirmation email. For example:
+
+**Template name:** TEST - Confirmation email
+**Subject line of the email:** Confirm of your email to completed your subscription at TEST
+**Message:**
+
+```
+Click on the following link to confirm your subscription
+((confirm_link))
+
+You have sign up to the TEST subscription
+```
+
+4. Save the templateID for the value "templateID" for the Topic creation in x-notify
+5. Create an email template to send mailing to subscribers
+
+**Template name:** TEST - Send mailing
+**Subject line of the email:** TEST - ((subject))
+**Message:**
+
+```
+Hi
+
+This is a test for TEST subscription.
+
+((body))
+
+Click on the following link to unsubscribe: ((unsub_link))
+```
+
+6. Save the templateID for the value "nTemplateMailingId" for the Topic creation in x-notify
+7. Go in the "API integration" menu
+8. Select the "API Keys" doormat
+9. Click on "Create an API key"
+10. Name the key like: TEST-subscription
+11. Choose the option "Team and safelist - limits who you can send to"
+12. Save the API key string for the value "notifyKey" for the Topic creation in x-notify
+
+
+## Regression testing
+
+Initial setup
+* GC Notification. See instruction above
+ Clear the database, drop all collection. Like by connecting to Mongo via the local port 27016
+* Create a topic with the notify key created and the template ID for email confirmation and mailing
+
+Test - Simple topic, minimal configuration
+* Create a new subscriber with your email. See the curl command above
+* TEST: Wait, you should receive a email in your inbox.
+* Confirm you email either following the link from where the local instance of x-notify is running or by running the above curl command by replacing the first id of 16 character in the URL.
+* TEST: Connect into the database, you should see a collection named "subsConfirmed" with your email in it.
+* Create a new mailing user by running a database command. Ensure the user has access to the topic ID you have set previously
+() Open you browser and go at http://localhost:8080/api/v1/mailing/login
+* Login with the user/pass credential you defined when creating the user
+* Create a new mailing by providing a campaign name
+* TEST: The mailing status should be set to "Draft"
+* TEST: In the workflow section, only "Approve" and "Cancel the mailing" option should be available
+* Click "Save and test"
+* TEST: Wait, you should receive an email with a special added message saying this is a test email
+* Click "Approve"
+* TEST: The mailing status should say "approved"
+* Go back into the all the mailing
+* Select your recently created mailing in the table
+* TEST: The mailing status should remain "approved"
+* TEST: In the workflow section, you should be able to see "Send mailing to subscriber" option
+* Click: "Save"
+* TEST: The mailing status should have changed back to "Draft"
+* TEST: In the working section, you should only see "Approve" and "Cancel" option. The "Send mailing" option should have been removed
+* Click: "Approve"
+* Click: "Send mailing to subscribers"
+* TEST: The mailing status should be "sending" and no option are available in the workflow
+* TEST: An option to cancel the mailing should appear before the mailing campaign name
+* Refresh the current page
+* TEST: The mailing status should have change to "Sent"
+* TEST: Check you email, you should have received the email.
+* TEST: The mailing status should have
+* END OF TEST, expected all test passed
+
+Test - Send a copy of the mailing to approvers
+* Add a list of approvers in the topic_details for the created topic
+* Go into the mailing and save it
+* TEST: In the workflow, you should see send to all approvers or be able to select specific name
+* Click on your name
+* TEST: Wait, you should receive an email with a message asking for approval
+* TEST: Check the mailing status, it should show "completed"
+* END OF TEST, expected all test passed
 
 ## Endpoint URLs
 
