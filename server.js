@@ -114,7 +114,6 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	app.post('/subs/post',
 		bodyParser.urlencoded({extended:false, limit: '10kb'}),
 		subsController.addEmailPOST);
-	app.post('/subs/sendMailing', subsController.sendMailing);
 	// app.get('/api/v0.1/subs/email/getAll', subsController.getAll); // TODO: kept for later if we create a "subscription" management page.
 
 
@@ -245,7 +244,10 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	app.get('/api/v1/mailing/:mailingid/sendToSubs',
 		userController.isAuthenticated,
 		mailingController.v_mailingSendToSub);
-	
+	app.get('/api/v1/mailing/stats',
+		userController.isAuthenticated,
+		mailingController.v_mailingGetTopicStats);
+
 	/**
 	 * SMTP Mail routes.
 	 */
