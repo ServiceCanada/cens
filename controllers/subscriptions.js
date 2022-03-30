@@ -165,7 +165,7 @@ exports.addEmail = async ( req, res, next ) => {
 			});
 
 			// Send confirm email - async
-			sendNotifyConfirmEmail( email, topic.confirmURL + confirmCode + "/" + _subsLinkSuffix, tId, nKey );
+			sendNotifyConfirmEmail( email, confirmCode, tId, nKey );
 
 			if ( _bypassSubscode ) {
 				res.subscode = confirmCode.toHexString();
@@ -273,7 +273,7 @@ exports.addEmailPOST = async ( req, res, next ) => {
 				});
 
 				// Send confirm email - async
-				sendNotifyConfirmEmail( email, topic.confirmURL + confirmCode + "/" + _subsLinkSuffix, tId, nKey );
+				sendNotifyConfirmEmail( email, confirmCode, tId, nKey );
 				
 				if ( _bypassSubscode ) {
 					res.subscode = confirmCode.toHexString();
@@ -648,7 +648,7 @@ resendEmailNotify = ( email, topicId, currDate ) => {
 
 			// To support deprecated query where the email was included in the URL, the subsequent URL can be made permanent after 60 days of it's deployment date
 			let subscode = ( docValue.subscode.length ? docValue.subscode : docValue.subscode.toHexString() );
-			await docValue && sendNotifyConfirmEmail( email, docValue.cURL + subscode + "/" + _subsLinkSuffix, docValue.tId, docValue.nKey );
+			await docValue && sendNotifyConfirmEmail( email, subscode, docValue.tId, docValue.nKey );
 
 			
 		})
@@ -718,9 +718,6 @@ sendEmailViaNotify = async ( email, templateId, personalisation, notifyKey ) => 
 		return true;
 	}
 
-	// There is 1 personalisation, the confirm links
-	// /subs/confirm/:subscode/:email
-
 	let notifyClient = notifyCached[ notifyKey ];
 
 
@@ -742,7 +739,7 @@ sendEmailViaNotify = async ( email, templateId, personalisation, notifyKey ) => 
 	!_bypassSubscode && notifyClient.sendEmail( templateId, email, 
 			{
 				personalisation: personalisation,
-				reference: "x-notify_subs_confirm"
+				reference: "x-notify_send_emails"
 			})
 	.catch( ( e ) => {
 		// Log the Notify errors
@@ -783,7 +780,7 @@ sendEmailViaNotify = async ( email, templateId, personalisation, notifyKey ) => 
 						email: email
 					}
 					).catch( (e2) => {
-				console.log( "sendNotifyConfirmEmail: notify_badEmail_logs: " + confirmCode );
+				console.log( "sendEmailViaNotify: notify_badEmail_logs: " + confirmCode );
 				console.log( e2 );
 				console.log( e );
 			});
@@ -802,7 +799,7 @@ sendEmailViaNotify = async ( email, templateId, personalisation, notifyKey ) => 
 						details: msg
 					}
 				).catch( (e2) => {
-					console.log( "sendNotifyConfirmEmail: notify_tooManyReq_logs: " + confirmCode );
+					console.log( "sendEmailViaNotify: notify_tooManyReq_logs: " + confirmCode );
 					console.log( e2 );
 					console.log( e );
 				});
@@ -841,7 +838,7 @@ sendEmailViaNotify = async ( email, templateId, personalisation, notifyKey ) => 
 						code: confirmCode
 					}
 					).catch( (e2) => {
-				console.log( "sendNotifyConfirmEmail: notify_logs: " + confirmCode );
+				console.log( "sendEmailViaNotify: notify_logs: " + confirmCode );
 				console.log( e2 );
 				console.log( e );
 			});
@@ -1102,8 +1099,9 @@ exports.simulateAddPost = async ( req, res, next ) => {
 }
 
 /**
- * This is the REST endpoint handler function for queuing a mailing with Notify
+ * This is the future REST endpoint handler function for queuing a mailing with Notify
  */
+/* It is commented until the mailing.js module is updated to use Bull to make the API call. Related to APPS-53 work.
 exports.sendMailing = async ( req, res, next ) => {
 	const email = req.body.email,
 	templateId = req.body.templateId,
@@ -1126,15 +1124,17 @@ exports.sendMailing = async ( req, res, next ) => {
 
 
 	res.json( _successJSO );
-}
+}*/
 
 /**
  * This is the function for queuing a subscriber confirmation email
  * send via notify.
  */
-sendNotifyConfirmEmail = async (email, confirmLink, templateId, notifyKey) =>{
+sendNotifyConfirmEmail = async (email, confirmCode, templateId, notifyKey) => {
+
+	// /subs/confirm/:subscode/:email
 	const personalisation = {
-								confirm_link: confirmLink
+								confirm_link: _confirmBaseURL + confirmCode + "/" + _subsLinkSuffix
 							};
 
 	notifyQueue.add({
