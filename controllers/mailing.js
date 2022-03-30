@@ -98,12 +98,13 @@ async function mailingView( paramMailingId ) {
 	// Input: MailingID
 	
 	const rDoc = await dbConn.collection( "mailing" ).findOne( { _id: ObjectId( paramMailingId ) } );
-	
 	if ( !rDoc ) {
 		console.log( "mailingView: Invalid mailing id: " + paramMailingId );
 		throw new Error( "Mailing unavailable" );
-	}
+	} 
 	
+	const approvers = await mailingApprovers( rDoc.topicId );
+ 
 	return {
 		id: rDoc._id,
 		topicId: rDoc.topicId,
@@ -113,7 +114,8 @@ async function mailingView( paramMailingId ) {
 		updatedAt: rDoc.updatedAt || rDoc.createdAt,
 		subject: rDoc.subject || "Mailing",
 		body: rDoc.body || "Type your content here",
-		history: rDoc.history || []
+		history: rDoc.history || [],
+		approvers: approvers || [] 
 	}
 }
 
@@ -158,11 +160,10 @@ async function mailingSave ( mailingId, title, subject, body, comments ) {
 }
 exports.mailingSave = mailingSave;
 
-async function mailingApprovers( mailingId ) {
-	const mailingInfo = await mailingUpdate( mailingId, _mailingState.completed );
+async function mailingApprovers( topicID ) {
 	// get approvers for mailingId
 	let tDetails = await dbConn.collection( "topics_details" ).findOne( 
-		{ _id: mailingInfo.topicId },
+		{ _id: topicID },
 		{
 			projection: {
 				approvers: 1
@@ -171,13 +172,12 @@ async function mailingApprovers( mailingId ) {
 	);
 
 	if ( !tDetails || !tDetails.approvers ) {
-		console.log( "mailingSendToApproval-No approvals email for : " + mailingInfo.topicId );
-		throw new Error( "No approvals email for : " + mailingInfo.topicId );
+		console.log( "mailingSendToApproval-No approvals email for : " + topicID );
+	    return [];
 	}
 
-	return tDetails.approvers
+	return tDetails.approvers;
 }
-exports.mailingApprovers = mailingApprovers;
 
 
 exports.mailingSaveTest = async ( email, mailingId, title, subject, body, comments ) => {
@@ -203,7 +203,7 @@ exports.mailingApproval = async ( mailingId, subscode ) => {
 	// Set state to "completed"
 
 	const mailingInfo = await mailingUpdate( mailingId, _mailingState.completed );
-	let approvers = await mailingApprovers ( mailingId );
+	let approvers = await mailingApprovers ( mailingInfo.topicId );
 
 	let mailingApproversList = [];
 	approvers && approvers.forEach( function( approver ) { 

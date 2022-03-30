@@ -94,13 +94,12 @@ exports.v_mailingEdit = async ( req, res, next ) => {
 		
 		}
 		
-		let mApprovers = await mailing.mailingApprovers( mailingid );
 		//forEach()
 		// Parse the body
 		jsBody = { jsBody: mailingData.body.replace( /\r/g, "").replace( /\n/g, "\\n" ) };
 
 		// Render the page
-		res.status( 200 ).send( await renderTemplate( "mailingEdit.html", Object.assign( {}, mailingData, btnControler, jsBody, { mApprovers : mApprovers } ) ));
+		res.status( 200 ).send( await renderTemplate( "mailingEdit.html", Object.assign( {}, mailingData, btnControler, jsBody ) ));
 	} catch ( e ){
 		
 		// Return mailingManager + Error message
@@ -181,13 +180,13 @@ exports.v_mailingSave = async ( req, res, next ) => {
 		
 		mailingData.msg = msg; // status message		
 		
-		let mApprovers = await mailing.mailingApprovers( mailingid );
+		
 
 		// Parse the body
 		jsBody = { jsBody: mailingData.body.replace( /\r/g, "").replace( /\n/g, "\\n" ) };
 		
 		// Render the page
-		res.status( 200 ).send( await renderTemplate( "mailingEdit.html", Object.assign( {}, mailingData, jsBody, { mApprovers: mApprovers} ) ) );
+		res.status( 200 ).send( await renderTemplate( "mailingEdit.html", Object.assign( {}, mailingData, jsBody ) ) );
 		
 		
 	} catch ( e ){
