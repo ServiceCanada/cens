@@ -921,7 +921,7 @@ letUsKnow = ( msg, logData, emailUs ) => {
 	//
 	// Send the email
 	//
-	if ( emailUs ) {
+	if ( emailUs && processEnv.OUR_NOTIFY_KEY ) {
 		let ourNotifyClient = new NotifyClient( processEnv.OUR_NOTIFY_END_POINT, processEnv.OUR_NOTIFY_KEY );
 		let email_to = JSON.parse( processEnv.OUR_NOTIFY_SEND_EMAIL_TO || "[]" );
 		email_to.forEach( ( emailGOC ) => {

@@ -24,7 +24,6 @@ const bodyParser = require('body-parser');
 //const crypto = require('crypto'); // To encrypt Notify keys
 
 const MongoClient = require('mongodb').MongoClient;
-const notifyQueue = require('./notifyQueue.js');
 
 const processEnv = process.env;
 
@@ -35,6 +34,7 @@ dotenv.config({
     path: '.env'
 });
 
+const notifyQueue = require('./notifyQueue.js');
 const _corsSettings = JSON.parse(processEnv.cors || '{"optionSucessStatus":200}');	// Parse CORS settings
 
 const _baseFolder = process.env.baseFolder || ""; 
@@ -260,7 +260,9 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	/**
 	 * Bull routes
 	 */
-	app.use('/admin/queues', notifyQueue.UI);
+	app.use( "/admin/queues",
+		passport.authenticate( "basic", { session: false } ),
+		notifyQueue.UI( _baseFolder + "/admin/queues" ) );
 
 
 	/**
