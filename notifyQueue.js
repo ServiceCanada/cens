@@ -1,7 +1,7 @@
 const Queue = require('bull');
-const { setQueues } = require('bull-board');
-const { UI } = require('bull-board');
-
+const { createBullBoard } = require('@bull-board/api');
+const { BullAdapter } = require('@bull-board/api/bullAdapter');
+const { ExpressAdapter } = require('@bull-board/express');
 
 const redisUri = process.env.REDIS_URI || 'x-notify-redis';
 const redisPort = process.env.REDIS_PORT || '6379';
@@ -32,6 +32,20 @@ if (process.env.NODE_ENV === 'prod') {
 }
 
 const notifyQueue = new Queue('sendMail', redisConf);
-setQueues([notifyQueue]);
 
-module.exports.UI = UI;
+const serverAdapter = new ExpressAdapter();
+
+createBullBoard({
+  queues: [
+    new BullAdapter( notifyQueue ),
+  ],
+  serverAdapter 
+})
+
+function getRouter( basePath ) {
+	serverAdapter.setBasePath( basePath );
+	return serverAdapter.getRouter();
+}
+
+
+module.exports.UI = getRouter;
