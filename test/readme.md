@@ -267,7 +267,6 @@ Test - Simple topic, minimal configuration
 * Refresh the current page
 * TEST: The mailing status should have change to "Sent"
 * TEST: Check you email, you should have received the email.
-* TEST: The mailing status should have
 * END OF TEST, expected all test passed
 
 Test - Send a copy of the mailing to approvers
