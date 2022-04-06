@@ -128,7 +128,7 @@ Note: We need to set the Service ID associated to the topic details (field: `nSe
 
 ### REDIS Default Configuration
 * `REDIS_ENV` Set environment value for Redis. Default: `stage` and `production` which would leverage the redis-sentinel in production environment
-* `REDIS_URI` Redis URI. Default: `x-notify-redis`
+* `REDIS_URI` Redis URI, the alias or the IP of the server host. Default: `x-notify-redis`
 * `REDIS_PORT` Port of Redis server. Default: `6379`
 * `REDIS_SENTINEL_1_URI` Redis Sentinel 1 URI. Default: `127.0.0.1`
 * `REDIS_SENTINEL_1_PORT` Redis Sentinel 1 PORT. Default: `26379`
