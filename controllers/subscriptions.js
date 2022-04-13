@@ -53,6 +53,8 @@ if (process.env.NODE_ENV === 'prod') {
 				{ host: redisSentinel2Uri, port: redisSentinel2Port }
 			],
 			name: redisMasterName,
+			host: redisUri,
+			port: redisPort
 		}
 	}
 } else {
