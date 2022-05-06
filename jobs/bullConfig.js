@@ -1,7 +1,13 @@
+//const Queue = require("bull");
+const { processSendEmail, getSubscribers } = require("../helpers/sendEmail");
+//const { setQueues } = require('bull-board');
+
+
 const Queue = require('bull');
 const { createBullBoard } = require('@bull-board/api');
 const { BullAdapter } = require('@bull-board/api/bullAdapter');
 const { ExpressAdapter } = require('@bull-board/express');
+
 
 const redisUri = process.env.REDIS_URI || 'x-notify-redis';
 const redisPort = process.env.REDIS_PORT || '6379';
@@ -10,6 +16,10 @@ const redisSentinel1Port = process.env.REDIS_SENTINEL_1_PORT || '26379';
 const redisSentinel2Uri = process.env.REDIS_SENTINEL_2_URI || '127.0.0.1';
 const redisSentinel2Port = process.env.REDIS_SENTINEL_2_PORT || '26379';
 const redisMasterName = process.env.REDIS_MASTER_NAME || 'x-notify-master';
+
+var maxCompletedJobs = process.env.COMPLETED_JOBS_TO_KEEP || 300;
+
+
 
 let redisConf = {};
 if (process.env.NODE_ENV === 'prod') {
@@ -33,13 +43,40 @@ if (process.env.NODE_ENV === 'prod') {
 	}
 }
 
-const notifyQueue = new Queue('sendMail', redisConf);
+
+const queue = new Queue("Jobs", redisConf);
+
+createJob = async (options, data) => {
+	console.log("job creattion")
+		console.log(options);
+	console.log(data);
+	queue.add(options, data,  {
+		removeOnComplete: true,
+		removeOnFail: true,
+	});
+};
+exports.createJob = createJob;
+
+queue.process("q_getSubscribers", (job, done) => {
+	console.log("subscribers retrieved --------      " + job.data);
+	console.log("bullConfig")
+	console.log(typeof createJob);
+	getSubscribers(job.data, done, createJob);
+});
+
+queue.process("q_sendEmail", (job, done) => {
+	console.log("send email triggered========");
+	console.log(job.data);
+	processSendEmail(job.data, done);
+});
+
+
 
 const serverAdapter = new ExpressAdapter();
 
 createBullBoard({
   queues: [
-    new BullAdapter( notifyQueue ),
+    new BullAdapter( queue ),
   ],
   serverAdapter 
 })
@@ -49,30 +86,8 @@ function getRouter( basePath ) {
 	return serverAdapter.getRouter();
 }
 
-
-exports.sendMailing = async ( req, res, next ) => {
-	const email = req.body.email,
-	templateId = req.body.templateId,
-	personalisation = req.body.personalisation,
-	notifyKey = req.body.notifyKey;
-
-	notifyQueue.add({
-						email:email,
-						templateId:templateId,
-						personalisation:personalisation,
-						notifyKey:notifyKey
-					},
-				   	{
-						priority:10
-					},
-					{
-						removeOnComplete: maxCompletedJobs
-					}
-	);
+//setQueues([queue]);
 
 
-	res.json( _successJSO );
-}
-
-
+//module.exports.createJob = createJob;
 module.exports.UI = getRouter;
