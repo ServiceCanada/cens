@@ -206,7 +206,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	app.get( '/api/v1/mailing/login', mailingController.v_mailingLogin );
 	app.get( '/api/v1/mailing/logout', userController.logout );
 	app.post( '/api/v1/mailing/login',
-		bodyParser.urlencoded({extended:true, limit: '50k'}),
+		bodyParser.urlencoded({extended:true, limit: '1mb'}),
 		passport.authenticate('local', { successRedirect: _baseFolder + '/api/v1/mailing/manage', failureRedirect: _baseFolder + '/api/v1/mailing/login'} ) );
 
 		
