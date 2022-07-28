@@ -56,6 +56,21 @@ Require
 
 Server will run at `0.0.0.0:8080` by default.
 
+## Local dev setup 
+Create a user in Database (for local database)
+```
+	db.users.insertOne( {
+		"name" : "test",
+		"email" : "pierre@example.com",
+		"accessToTopicId" : [
+			"test"
+		],
+		"pass" : "<a plain text password>"
+	})
+```
+* Url: localhost:/8080/api/v1/mailing/login
+* Username: test
+* Password: <a plain text password> (pass entered in database)
 
 ## Environment variables
 
