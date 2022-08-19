@@ -692,9 +692,8 @@ exports.getTopic = async ( req, res, next ) => {
 	
 	// Params: accessCode
 	const accessCode = req.params.accessCode;
-
-	let topicId = req.query.topicId;
-
+	let topicId = req.params.topicId;
+	
 	let doc = await dbConn.collection( "topics" ).findOne(
 		{
 			_id: topicId
