@@ -157,7 +157,7 @@ exports.addEmail = async ( req, res, next ) => {
 				subscode: confirmCode,
 				topicId: topicId,
 				notBefore: nBfDate.setMinutes( currDate.getMinutes() + _nbMinutesBF ),
-				createAt: currDate,
+				createdAt: currDate,
 				tId: tId,
 				nKey: nKey,
 				cURL: topic.confirmURL
