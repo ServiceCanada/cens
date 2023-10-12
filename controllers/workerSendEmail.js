@@ -256,8 +256,8 @@ async function init() {
 			console.log( "worker-sendNotifyConfirmEmail: sendEmail " + userCodeUrl );
 		});
 		
-		// after 40, wait 1 second before to send the next 40 emails.
-		if ( i % 40 === 0 ) {
+		// after every 14 email, wait 1 second before to send the next 14 emails. This is avoid the default limit of 60 emails per second and of 1000 email per 60 seconds
+		if ( i % 14 === 0 ) {
 			await sleep( 1000 );
 		}
 	}
