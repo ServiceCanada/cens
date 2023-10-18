@@ -647,10 +647,13 @@ resendEmailNotify = ( email, topicId, currDate ) => {
 				console.log( "resendEmailNotify: subs_logs" );
 				console.log( e );
 			});
+			
+			// Get the latest template ID and notify API key from the server memory cache associated with the topic
+			const topicDetails = await getTopic( topicId );
 
 			// To support deprecated query where the email was included in the URL, the subsequent URL can be made permanent after 60 days of it's deployment date
 			let subscode = ( docValue.subscode.length ? docValue.subscode : docValue.subscode.toHexString() );
-			await docValue && sendNotifyConfirmEmail( email, subscode, docValue.tId, docValue.nKey );
+			await docValue && sendNotifyConfirmEmail( email, subscode, topicDetails.templateId, topicDetails.notifyKey );
 
 			
 		})
