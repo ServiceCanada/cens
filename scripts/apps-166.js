@@ -96,6 +96,20 @@ const scriptConfig = {
 				templateId: "63004144-1cdf-4b5d-b440-f7958a4383a4",
 				startDate: "2023-10-10T19:30:00.000Z",
 				endDate: "2023-10-10T19:50:00.000Z"
+			},
+			{
+				note: "English mailing 2 with 429 error",
+				mailingId: "65302b13a4e8d919da2cff0e",
+				templateId: "73e3a5e5-924a-4dda-b401-6c2d5474db34",
+				startDate: "2023-10-18T19:20:00.000Z",
+				endDate: "2023-10-10T19:40:00.000Z"
+			},
+			{
+				note: "French mailing 2 with 429 error",
+				mailingId: "65302b27a4e8d919da2cff10",
+				templateId: "63004144-1cdf-4b5d-b440-f7958a4383a4",
+				startDate: "2023-10-10T19:20:00.000Z",
+				endDate: "2023-10-10T19:40:00.000Z"
 			}
 		]
 	};
