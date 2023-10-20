@@ -316,7 +316,7 @@ async function pull(coll, topicIds, arrayToPullFrom) {
 
 async function invalidateTopics(topicIds) {
 	console.log(`Nullifying notifyKey and URLs for ${topicIds.join(', ')}`)
-	let findQuery = { topicId: { $in: topicIds } };
+	let findQuery = { _id: { $in: topicIds } };
 	let updateQuery = { 
 		$set: 
 			{
@@ -326,5 +326,5 @@ async function invalidateTopics(topicIds) {
 				failURL: null
 			} 
 		}
-	await db.collection(coll).updateMany(findQuery, updateQuery);
+	await db.collection( "topics" ).updateMany(findQuery, updateQuery);
 }
