@@ -119,7 +119,7 @@ async function clearFromLogs(topicIds) {
 	
 	let logCollectionsToClearBySubsCodes = ["notify_tooManyReq_logs", "notify_badEmail_logs"];
 	
-	for (coll in logCollectionsToClearBySubsCodes) {
+	for (let coll of logCollectionsToClearBySubsCodes) {
 		await countLogsBySubsCodes(coll, subscodesForTopics);
 		await deleteLogsBySubsCodes(coll, subscodesForTopics);
 		let numLogsRemainingForSubsCodes = await countLogsBySubsCodes(coll, subscodesForTopics);
