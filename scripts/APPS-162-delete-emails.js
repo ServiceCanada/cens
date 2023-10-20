@@ -36,7 +36,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 async function run() {
 	console.log(`Deleting e-mail addresses associated with ${topicIds.join(', ')} ...`);
 	await clearFromLogs(topicIds);
-	let collectionsToClearEmailsFrom = ["subsConfirmed", "subsConfirmedNewCode", "subsUnconfirmed", "subsExist", "subsRecents", "subs_Unsubs"];
+	let collectionsToClearEmailsFrom = ["subsConfirmed", "subsConfirmedNewCode", "subsUnconfirmed", "subsRecents", "subsUnsubs"];
 	
 	for (let coll of collectionsToClearEmailsFrom) {
 		let emailCount = await countEmailsForTopicIdByCollection(topicIds, coll);
@@ -81,7 +81,7 @@ async function countEmailsForTopicIdByCollection(topicIds, coll) {
 async function deleteLogsBySubsCodes(coll, subscodesToDelete) {
 	await db.collection(coll).deleteMany( 
 		{ 
-			subscode: 
+			code: 
 				{
 					$in: subscodesToDelete
 				}
@@ -93,7 +93,7 @@ async function deleteLogsBySubsCodes(coll, subscodesToDelete) {
 async function countLogsBySubsCodes(coll, subscodesToDelete) {
 	let numLogsBySubsCodes = await db.collection(coll).countDocuments( 
 		{ 
-			subscode: 
+			code: 
 				{
 					$in: subscodesToDelete
 				}
@@ -127,7 +127,7 @@ async function clearFromLogs(topicIds) {
 			throw new Error(`Not all logs were deleted from ${coll} for subscodes related to ${topicIds.join(', ')}.
 				${numLogsRemainingForSubsCodes} logs remain.`);
 		}
-		let subsCodesRemainingInLog = await db.collection(coll).distinct("subscode");
+		let subsCodesRemainingInLog = await db.collection(coll).distinct("code");
 		if(subsCodesRemainingInLog) {
 			let numRemainingInSubsUnconfirmedForRemainingSubscodesForSpecifiedTopicIds = await db.collection("subsUnconfirmed").countDocuments(
 				{
