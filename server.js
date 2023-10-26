@@ -35,6 +35,8 @@ dotenv.config({
 });
 
 const notifyQueue = require('./notifyQueue.js');
+const sendMailQueue = require("./jobs/bullConfig.js")
+
 const _corsSettings = JSON.parse(processEnv.cors || '{"optionSucessStatus":200}');	// Parse CORS settings
 
 const _baseFolder = process.env.baseFolder || ""; 
@@ -261,9 +263,12 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	 * Bull routes
 	 */
 	app.use( "/admin/queues",
-		passport.authenticate( "basic", { session: false } ),
+		//passport.authenticate( "basic", { session: false } ),
 		notifyQueue.UI( _baseFolder + "/admin/queues" ) );
-
+	
+	app.use( "/admin/sendQueues",
+		//passport.authenticate( "basic", { session: false } ),
+		sendMailQueue.UI( _baseFolder + "/admin/sendQueues" ) );
 
 	/**
 	 * JWT Authentication
