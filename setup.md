@@ -168,6 +168,7 @@ topics
 * failURL: Failure URL for server error,
 * inputErrURL: Failure URL for filling out the form incorrectly
 * nTemplateMailingId: template ID for sending a corresponding mailing
+* bulkMail: When set to true, enables usage bulk api from GCNotify
 
 
 topics_details

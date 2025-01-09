@@ -11,6 +11,7 @@ const dbConn = module.parent.parent.exports.dbConn;
 const ObjectId = require('mongodb').ObjectId;
 
 const { Worker } = require('worker_threads');
+const bulkApiMailer = require('./bulkApiMailer');
 
 const _mailingState = {
 	cancelled: "cancelled",
@@ -232,20 +233,33 @@ exports.mailingCancelSendToSub = async ( mailingId ) => {
 }
 
 exports.mailingSendToSub = async ( mailingId ) => {
+	let mailing = await dbConn.collection( "mailing" ).findOne( { _id: ObjectId( mailingId ) } );
+	if ( !mailing ) {
+		console.log( "mailingSendToSub: Invalid mailing id: " + mailingId );
+		throw new Error( "mailingSendToSub: Mailing unavailable" );
+	}
+
+	let topic = await getTopic( mailing.topicId );
+	if ( !topic ) {
+		console.log( "mailingSendToSub: no topic: " + mailing.topicId );
+		throw Error( "mailingSendToSub : no topic with topicId: " +  mailing.topicId);
+	}
+
 	// Need to be in current state "approved"
-
 	const rDoc = await mailingUpdate( mailingId, _mailingState.sending, { historyState: _mailingState.approved } );
-	
-
 	// Check if the operation was successful, if not we know the error is already logged
 	if ( !rDoc ) {
 		return true;
 	}
-	
-	// Do the sending
-	sendMailingToSubs( mailingId, rDoc.topicId, rDoc.subject, rDoc.body );
-	
-	
+
+	//if the bulkMail flag is set emails are delivered using bulk api
+	if ( topic.bulkMail ) {
+		bulkApiMailer.sendBulkEmails( mailingId, rDoc.topicId );
+	} else {
+		// Do the sending
+		sendMailingToSubs( mailingId, rDoc.topicId, rDoc.subject, rDoc.body );
+	}
+
 	// When completed, change state to "sent"
 	
 }
@@ -389,13 +403,12 @@ async function mailingUpdate( mailingId, newHistoryState, options ) {
 	// Send the mailing to the "approval email list"
 	return rDoc.value;
 }
-
+exports.mailingUpdate = mailingUpdate;
 
 // Simple worker to send mailing
 async function sendMailingToSubs ( mailingId, topicId, mailingSubject, mailingBody ) {
 	
 	// When completed, change state to "sent"
-
 	// Start the worker.
 	const worker = new Worker( './controllers/workerSendEmail.js', {
 		workerData: {
@@ -492,7 +505,8 @@ getTopic = ( topicId ) => {
 					unsubURL: 1,
 					thankURL: 1,
 					failURL: 1,
-					inputErrURL: 1
+					inputErrURL: 1,
+					bulkMail: 1
 				} 
 			} ).catch( (e) => {
 				console.log( "getTopic" );
@@ -511,5 +525,5 @@ getTopic = ( topicId ) => {
 	}
 	
 	return topic;
-		
 }
+exports.getTopic = getTopic

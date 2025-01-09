@@ -35,11 +35,16 @@ if (process.env.NODE_ENV === 'prod') {
 
 const notifyQueue = new Queue('sendMail', redisConf);
 
+//used by bulk Api manager
+const bulkQueue = new Queue('bulk-api', redisConf);
+exports.bulkQueue = bulkQueue;
+
 const serverAdapter = new ExpressAdapter();
 
 createBullBoard({
   queues: [
     new BullAdapter( notifyQueue ),
+	new BullAdapter( bulkQueue ),
   ],
   serverAdapter 
 })

@@ -39,11 +39,6 @@ const sleep = ( waitTimeInMs ) => new Promise( resolve => setTimeout( resolve, w
 
 async function init() {
 
-	// Ensure we have received all the worker data
-	if ( !mailingBody || !mailingSubject ) {
-		throw new Error( "Worker: No email body" );
-	}
-	
 	if ( !topicId ) {
 		throw new Error( "Worker: No topicId selected" );
 	}
@@ -58,6 +53,7 @@ async function init() {
 				nTemplateMailingId: 1,
 				templateId: 1,
 				notifyKey: 1,
+				bulkMail: 1
 			} 
 		} ).catch( (e) => {
 			console.log( "worker-getTopic" );
@@ -82,6 +78,12 @@ async function init() {
 		throw new Error( "Worker: Invalid type mailing, was : " + typeMailing );
 	}
 
+	if ( !topic.bulkMail ) {
+		// Ensure we have received all the worker data
+		if ( !mailingBody || !mailingSubject ) {
+			throw new Error( "Worker: No email body" );
+		}
+	}
 
 
 	/*
@@ -113,7 +115,7 @@ async function init() {
 	//console.log( "_notifyEndPoint: " + _notifyEndPoint );
 	//console.log( "notifyKey: " + notifyKey );
 	
-	let i, i_len = listEmail.length, i_cache;
+	let i, i_len = listEmail.length, i_cache, personalisation={};
 	for( i = 0; i !== i_len; i++) {
 		
 		i_cache = listEmail[ i ];
@@ -126,6 +128,18 @@ async function init() {
 
 		if ( !email ) {
 			continue;
+		}
+
+		if ( topic.bulkMail ) {
+			personalisation ={
+				unsub_link: _unsubBaseURL + userCodeUrl + "/" + _subsLinkSuffix
+			}
+		} else {
+			personalisation = {
+				body: mailingBody,
+				subject: mailingSubject,
+				unsub_link: _unsubBaseURL + userCodeUrl + "/" + _subsLinkSuffix
+			}
 		}
 	
 		//parentPort.postMessage( { msg: "Send for : " + email } );
@@ -140,11 +154,7 @@ async function init() {
 		
 		notifyClient.sendEmail( templateId, email, 
 		{
-			personalisation: { 
-				body: mailingBody,
-				subject: mailingSubject,
-				unsub_link: _unsubBaseURL + userCodeUrl + "/" + _subsLinkSuffix
-			},
+			personalisation: personalisation,
 			reference: "x-notify_" + typeMailing
 		}).catch( ( e ) => {
 			// Log the Notify errors
