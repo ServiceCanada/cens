@@ -194,8 +194,6 @@ exports.addEmail = async ( req, res, next ) => {
 
 
 
-
-
 //
 // Add email to the newSubscriberEmail
 //
@@ -210,7 +208,7 @@ exports.addEmailPOST = async ( req, res, next ) => {
 		currDate = new Date(),
 		nBfDate = new Date(),
 		currEpoc = Date.now(); 
-	let email = reqbody.eml.toLowerCase() || "";
+	let email = reqbody.eml;
 
 	let keyBuffer = new Buffer(key, 'base64'),
 		keyDecrypt = keyBuffer.toString('ascii');
@@ -220,32 +218,37 @@ exports.addEmailPOST = async ( req, res, next ) => {
 	// If no data, key not matching or referer not part of whitelist, then not worth going further
 	// _validHost need to be changed for "validReferer" || _validHosts.indexOf(host) === -1 
 	if ( !reqbody || keyDecrypt < currEpoc ) {
-
 		console.log( "addEmailPOST: noauth " + key + " " + host);
 		res.redirect( _errorPage );
 		return true;
 	}
-	
-	// Get the topic
-	const topic = await getTopic( topicId );
-	
+
 	try {
-		
+		if ( !topicId ) {
+			console.log( "addEmail: no topicId: " + topicId );
+			res.redirect( _errorPage );
+			return;
+		}
+
+		// Get the topic
+		const topic = await getTopic( topicId );
+
 		// No topic = no good
 		if ( !topic || !topic.inputErrURL || !topic.thankURL || !topic.failURL ) {
-			console.log( "addEmailPOST: no topic" );
+			console.log( "addEmailPOST: check topic information" );
 			res.redirect( _errorPage );
-			return true;
+			return;
 		}
-		
+
 		// Validate if email is the good format (something@something.tld)
-		if ( !email.match( /.+\@.+\..+/ ) ) {
+		if ( !email || typeof email !== "string" || !email.match( /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/ ) ) {
+			console.log( "addEmail: bad email: " + email );
 			res.redirect( topic.inputErrURL );
 			return;
 		}
-		
+
 		// URL Decrypt the email. It is double encoded like: "&amp;#39;" should be "&#39;" which should be "'"
-		email = await entities.decodeXML( await entities.decodeXML( email ) );
+		email = await entities.decodeXML( await entities.decodeXML( email.toLowerCase() ) );
 
 		// Check if the email is in the "SubsExist"
 		await dbConn.collection( "subsExist" ).insertOne( 
