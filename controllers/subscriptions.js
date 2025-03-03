@@ -34,7 +34,7 @@ const processEnv = process.env,
 	_subsLinkSuffix = processEnv.subsLinkSuffix || "853e0212b92a127";
 
 
-const redisUri = process.env.REDIS_URI || 'x-notify-redis';
+const redisUri = process.env.REDIS_URI || 'notify-redis-1';
 const redisPort = process.env.REDIS_PORT || '6379';
 const redisSentinel1Uri = process.env.REDIS_SENTINEL_1_URI || '127.0.0.1';
 const redisSentinel1Port = process.env.REDIS_SENTINEL_1_PORT || '26379';
