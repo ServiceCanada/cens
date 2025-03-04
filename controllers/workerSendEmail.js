@@ -64,7 +64,8 @@ async function init() {
 			console.log( e );
 			throw new Error( "Worker: Can find the topic: " +  topicId );
 		});
-
+		console.log("workerSendEmail  -- topic")
+	console.log(topic)
 	let templateId,
 		notifyKey = topic.notifyKey;
 
@@ -108,6 +109,8 @@ async function init() {
 	 * Send the mailing
 	 *
 	 */
+	 console.log("worker _notifyEndPoint  " + _notifyEndPoint)
+	 console.log("notifyKey " + notifyKey);
 	let notifyClient = new NotifyClient( _notifyEndPoint, notifyKey );
 
 	//console.log( "_notifyEndPoint: " + _notifyEndPoint );

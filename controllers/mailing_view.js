@@ -10,6 +10,8 @@
 const mustache = require('mustache');
 const fsPromises = require('fs').promises;
 const mailing = require('./mailing');
+//const subscription = require('./subscriptions');
+
 const _mailingState = mailing.mailingState;
 const _baseRedirFolder = ( process.env.baseFolder || "" ) + "/api/v1/mailing/";
  

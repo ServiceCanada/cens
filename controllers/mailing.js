@@ -11,6 +11,10 @@ const dbConn = module.parent.parent.exports.dbConn;
 const ObjectId = require('mongodb').ObjectId;
 
 const { Worker } = require('worker_threads');
+const { createJob } = require("../jobs/bullConfig");
+
+console.log("mailing " +  typeof createJob)
+console.log(createJob)
 
 const _mailingState = {
 	cancelled: "cancelled",
@@ -395,8 +399,18 @@ async function mailingUpdate( mailingId, newHistoryState, options ) {
 async function sendMailingToSubs ( mailingId, topicId, mailingSubject, mailingBody ) {
 	
 	// When completed, change state to "sent"
-
+	
 	// Start the worker.
+	workerData = {
+			topicId: topicId,
+			mailingBody: mailingBody,
+			mailingSubject: mailingSubject,
+			typeMailing: "msgUpdates",
+			sentTo: "allSubs",
+			dbConn: true //dbConn
+		};
+		createJob("q_getSubscribers", workerData);
+		/*
 	const worker = new Worker( './controllers/workerSendEmail.js', {
 		workerData: {
 			topicId: topicId,
@@ -407,6 +421,11 @@ async function sendMailingToSubs ( mailingId, topicId, mailingSubject, mailingBo
 			dbConn: true //dbConn
 		}
 	});
+	
+	
+	
+
+	
 	
 	worker.on('message', function(msg){
 		
@@ -419,12 +438,14 @@ async function sendMailingToSubs ( mailingId, topicId, mailingSubject, mailingBo
 		}
 		
 		console.log( msg.msg );
+		
 	});
 	
     worker.on('error', function(msg){
 		console.log( "Send to subs - Worker ERRROR: " + msg );
 	});
-	
+	*/
+	mailingUpdate( mailingId, _mailingState.sent, { historyState: _mailingState.sending } );
 }
 
 // Simple worker to send mailing

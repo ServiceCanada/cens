@@ -1109,7 +1109,8 @@ exports.simulateAddPost = async ( req, res, next ) => {
 /**
  * This is the future REST endpoint handler function for queuing a mailing with Notify
  */
-/* It is commented until the mailing.js module is updated to use Bull to make the API call. Related to APPS-53 work.
+//It is commented until the mailing.js module is updated to use Bull to make the API call. Related to APPS-53 work.
+/*
 exports.sendMailing = async ( req, res, next ) => {
 	const email = req.body.email,
 	templateId = req.body.templateId,
@@ -1132,8 +1133,8 @@ exports.sendMailing = async ( req, res, next ) => {
 
 
 	res.json( _successJSO );
-}*/
-
+}
+*/
 /**
  * This is the function for queuing a subscriber confirmation email
  * send via notify.
