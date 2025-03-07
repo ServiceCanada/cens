@@ -1,38 +1,48 @@
 version: '3.8'
 services:
-  mongo:
+  notify-mongo-1:
     image: mongo:4.2
-    container_name: x-notify-mongo
+    container_name: notify-mongo-1
     ports:
      - target: 27017
        published: 27016
        protocol: tcp
        mode: host
     networks:
-     - x-notify-net
-  redis:
-    image: redis:6.0.1
-    container_name: x-notify-redis
+     - notify-net-1
+    volumes:
+      - mongo_data:/data/db  # Persistent volume for MongoDB
+      - mongo_config:/data/configdb  # Configuration volume
+
+  notify-redis-1:
+    image: redis:6.2.0
+    container_name: notify-redis-1
     ports:
      - "6379:6379"
     networks:
-     - x-notify-net
-  x-notify:
+     - notify-net-1
+  notify-node-1:
     build: ./
-    container_name: x-notify
+    container_name: notify-node-1
     ports: 
      - "8080:8080"
     restart: on-failure
     environment:
-     - MONGODB_URI=mongodb://mongo:27017/test
+     - MONGODB_URI=mongodb://notify-mongo-1
      - NODE_ENV=development
+    env_file: ".env"
     depends_on:
-     - mongo
+     - notify-mongo-1
+     - notify-redis-1
     volumes:
-     - .:/x-notify
-     - /node_modules
+     - .:/cens
+     - /cens/node_modules
     networks:
-     - x-notify-net
+     - notify-net-1
+volumes:
+  mongo_data:
+  mongo_config:
+
 networks:
-  x-notify-net:
+  notify-net-1:
     driver: bridge
