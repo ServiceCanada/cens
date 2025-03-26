@@ -37,8 +37,7 @@
 		<p><strong>Last updated: </strong>{{updatedAt}}</p>
 		<form id="frmEdit" method="post" action="edit">
 			<h3>Email message</h3>
-			<p><a href="https://notification.alpha.canada.ca/features/templates">Email formating guide</a></p>
-			
+			<p><a href="https://notification.canada.ca/formatting-emails">Email formating guide</a></p>
 			<div class="form-horizontal">
 				<div class="form-group">
 					<label for="mailling-title" class="col-sm-4 control-label">Edit campaign name</label>
@@ -47,6 +46,7 @@
 					</div>
 				</div>
 			</div>
+		{{#showEmailFields}}
 			<div class="form-horizontal">
 				<div class="form-group">
 					<label for="eml-subs" class="col-sm-4 control-label">Email subject line</label>
@@ -59,18 +59,23 @@
 				<label for="txtBody">Email body content</label>
 				<textarea class="form-control" id="txtBody" name="body" rows="20" cols="200">{{#body}}{{.}}{{/body}}</textarea>
 			</div>
-	
+		{{/showEmailFields}}
+		{{^showEmailFields}}
+			<p> Edit the content of your email directly in <a href="https://notification.canada.ca/sign-in" target="_blank">GC Notify</a>. Once ready, you can then send it to your subscribers using the buttons below. </p>
+		{{/showEmailFields}}
 	{{! Don't show any button when the sending to subscribers occrus }}
 	{{^showCancelSend}}
-			<div class="form-group">
-				<label for="comments">Editorial comments</label>
-				<textarea class="form-control" id="comments" name="comments" rows="3" cols="200"></textarea>
-			</div>
+			{{#showEmailFields}}
+				<div class="form-group">
+					<label for="comments">Editorial comments</label>
+					<textarea class="form-control" id="comments" name="comments" rows="3" cols="200"></textarea>
+				</div>
 
-			<button type="submit" name="action" value="save" class="btn btn-primary">Save</button>
-			<button type="submit" name="action" value="saveTest" class="btn btn-default">Save and test</button>
-
+				<button type="submit" name="action" value="save" class="btn btn-primary">Save</button>
+				<button type="submit" name="action" value="saveTest" class="btn btn-default">Save and test</button>
+			{{/showEmailFields}}
 		{{#body}}
+
 			<h3>Workflow</h3>
 		<ul>
 			{{#approvers.length}}

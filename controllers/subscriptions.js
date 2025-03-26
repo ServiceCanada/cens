@@ -946,6 +946,7 @@ letUsKnow = ( msg, logData, emailUs ) => {
 		});
 	}
 }
+exports.letUsKnow = letUsKnow;
 
 //
 // Edge case - Confirm and Unsub URL cutted and base64 encoded

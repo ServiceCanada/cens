@@ -62,44 +62,60 @@ exports.v_mailingEdit = async ( req, res, next ) => {
 	
 	try {
 		const mailingid = req.params.mailingid;
-	
+
 		// Get the mailing
 		let mailingData = await mailing.mailingView( mailingid ),
 			mailingState = mailingData.state;
-		
-		let btnControler = {
-			showApproved: 1
+
+		let topic = await mailing.getTopic( mailingData.topicId );
+		if ( !topic ) {
+			console.log( "mailingSendToSub: no topic: " + mailingData.topicId );
+			throw Error( "mailingSendToSub : no topic with topicId: " +  mailingData.topicId);
 		}
+		let btnController = {
+			showApproved: 1,
+		}
+		
+		let emailFieldsController = {
+			showEmailFields: 1
+		}
+		
+
+		//if the bulkMail flag is set emails are delivered using bulk api
+		if ( topic.bulkMail ) {
+			emailFieldsController = {
+				showEmailFields: 0
+			}
+		}
+
 		// Adjust the workflow based on the state
 		// Nothing to do for: mailingState.draft; mailingState.cancelled; mailingState.sent
-
-		
 		if ( mailingState === _mailingState.completed ) {
 
-			btnControler = {
+			btnController = {
 				showApproved: 1
 			}
 		
 		} else if ( mailingState === _mailingState.approved ) {
 		
-			btnControler = {
+			btnController = {
 				showSendToSubs: 1
 			}
 			
 		} else if ( mailingState === _mailingState.sending ) {
 		
-			btnControler = { 
+			btnController = { 
 				showCancelSend: 1
 			}
 		
 		}
-		
+
 		//forEach()
 		// Parse the body
 		jsBody = { jsBody: mailingData.body.replace( /\r/g, "").replace( /\n/g, "\\n" ) };
 
 		// Render the page
-		res.status( 200 ).send( await renderTemplate( "mailingEdit.html", Object.assign( {}, mailingData, btnControler, jsBody ) ));
+		res.status( 200 ).send( await renderTemplate( "mailingEdit.html", Object.assign( {}, mailingData, btnController, emailFieldsController, jsBody ) ));
 	} catch ( e ){
 		
 		// Return mailingManager + Error message
@@ -179,14 +195,17 @@ exports.v_mailingSave = async ( req, res, next ) => {
 		}
 		
 		mailingData.msg = msg; // status message		
-		
-		
+
+		let emailFieldsController = {
+			showEmailFields: 1
+		}
+
 
 		// Parse the body
 		jsBody = { jsBody: mailingData.body.replace( /\r/g, "").replace( /\n/g, "\\n" ) };
 		
 		// Render the page
-		res.status( 200 ).send( await renderTemplate( "mailingEdit.html", Object.assign( {}, mailingData, jsBody ) ) );
+		res.status( 200 ).send( await renderTemplate( "mailingEdit.html", Object.assign( {}, mailingData, jsBody, emailFieldsController ) ) );
 		
 		
 	} catch ( e ){
