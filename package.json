@@ -1,6 +1,6 @@
 {
   "name": "cens",
-  "version": "1.0.0",
+  "version": "1.4.0",
   "description": "MVP subscription service to send email update via Notify from CDS. This MVP is going to be replaced by notification-dispatcher.",
   "repository": {
     "type": "git",
