@@ -14,6 +14,8 @@ const BULK_Q_JOB_DELAY_TIME = parseInt(process.env.BULK_Q_JOB_DELAY_TIME) || 1 *
 const _notifyUsTimeLimit = parseInt(process.env.notifyUsTimeLimit) || 180000;
 const BULK_Q_REMOVE_ON_COMP = parseInt(process.env.BULK_Q_REMOVE_ON_COMP) || 500;
 const BULK_Q_REMOVE_ON_FAIL = parseInt(process.env.BULK_Q_REMOVE_ON_FAIL) || 2500;
+const _subsLinkSuffix = process.env.subsLinkSuffix || "853e0212b92a127";
+
 let mongoInstance,
 	dbConn,
 	_notifyUsNotBeforeTimeLimit = 0;
@@ -221,15 +223,15 @@ formatSubsArray = async ( listEmail ) => {
 	for( i = 0; i !== i_len; i++) {
 		subscriber = listEmail[ i ];
 
-		const { email, _id } = subscriber;
+		const { email, subscode } = subscriber;
 
-		const userCodeUrl = ( _id ? _id.toHexString() : _id );
+		const userCodeUrl = ( subscode ? subscode.toHexString() : subscode );
 
 		if ( !email || !userCodeUrl ) {
 			continue;
 		}
 
-		let unsub_link =  BASE_URL + "/subs/remove/" + userCodeUrl;
+		let unsub_link =  BASE_URL + "/subs/remove/" + userCodeUrl + "/" + _subsLinkSuffix;
 		subsArray.push( [ email, unsub_link ] );
 	}
 
