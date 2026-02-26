@@ -39,12 +39,27 @@ bulkQueue.process(async (job) => {
 		});
 
         if (!response.ok) {
-            console.error(`Bulk API failed with status: ${response.status}`);
-			console.error(`HTTP Error Status: ${response.statusText}`)
-			console.error(response)
+			console.error(`Bulk API failed with status: ${response.status} - HTTP Error Status: ${response.statusText}`);
+			let errorDetails = {};
+			try {
+				errorDetails = await response.json();
+			} catch (parseErr) {
+				console.error('Failed to parse error body:', parseErr);
+			}
 
-			throw new Error(`HTTP Error Status: ${response.status}`);
-        } else {
+			const err = new Error(`GC Notify Bulk API error: ${response.status} ${response.statusText}`);
+
+			// Attach status + parsed body to error object
+			err.httpStatus = response.status;
+			err.statusText = response.statusText;
+			err.errorBody = errorDetails?.errors?.[0] || errorDetails || errorDetails.toString();
+			err.errorCode = errorDetails?.errors?.[0]?.code || errorDetails?.status_code || null;
+			err.errorMessage = errorDetails?.errors?.[0]?.message || errorDetails?.message ||response.statusText;
+
+			console.error(` --------------------> GC Notify Bulk API error: `);
+			console.error(err);
+			throw err;
+		} else {
 			jobSuccess = true;
 			// If request is successful, update mailing status
 			mailingManager.mailingUpdate(jobData.mailingId, mailingState.sent, { historyState: mailingState.sending });
@@ -52,11 +67,13 @@ bulkQueue.process(async (job) => {
 		}
 
     } catch ( error ) {
-		console.error("bulk q process error")
-		console.log(error)
-
 		const currDate = new Date(),
 		currDateTime = currDate.getTime();
+
+		const httpStatus = error.httpStatus || null;
+		const errCode = error.errorCode || error.code || null;
+		const errMsg = error.errorMessage || error.message;
+		const errDetails = error.errorBody ? JSON.stringify(error.errorBody) : error.toString();
 
 		// Connect to MongoDB
         mongoInstance = await MongoClient.connect(process.env.MONGODB_URI || '', { useUnifiedTopology: true });
@@ -66,17 +83,17 @@ bulkQueue.process(async (job) => {
         if ( dbConn ) {
             try {
                 await dbConn.collection("notify_logs").insertOne({
-                    createdAt: currDate,
-                    jobData: job.data,
-                    err_msg: error.message,
-					err_status: error.status,
-					err_code: error.code,
-					error: error.toString(),
-					emailLength: emailLength
+					createdAt: currDate,
+					jobData: job.data,
+					errorMessage: errMsg,       // GCNotify message
+					http_status: httpStatus, // HTTP status
+					notify_Errorcode: errCode,     // GC Notify error code or Node error.code
+					errDetails: errDetails,     // full JSON/error string
+					emailLength: emailLength,
                 });
             } catch ( dbError ) {
                 console.error( "Failed to log error in notify_logs:", dbError );
-				throw new Error ( "Bulk Queue process DB error " + dbError )
+				throw new Error ( "Bulk Queue process DB error " + dbError.message )
             }
         }
 
@@ -84,7 +101,7 @@ bulkQueue.process(async (job) => {
 		// Try to email us (only with the predefined interval)
 		//
 		if ( _notifyUsNotBeforeTimeLimit <= currDateTime ) {
-			letUsKnow( "Bulk Queue error", {
+			letUsKnow( "Bulk Queue error " + error.message + " - " + errMsg, {
 					type: "bulk_q_process_error",
 					currTime: currDateTime,
 					lastTime: _notifyUsNotBeforeTimeLimit
@@ -96,8 +113,9 @@ bulkQueue.process(async (job) => {
 		}
 
         // Handle retryable errors
-        if ( error.message.includes("HTTP Error Status: 5")) {
-            throw new Error("Retryable error"); // Ensures Bull retries
+        if ( error.message.includes("GC Notify Bulk API error: 5")) {
+			console.log("===============================>>>>>>>>>>>>>>>>================ Retrying job due to server error...");
+			throw new Error("Retryable error"); // Ensures Bull retries
         }
 
     } finally {

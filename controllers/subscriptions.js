@@ -741,25 +741,26 @@ sendEmailViaNotify = async ( email, templateId, personalisation, notifyKey ) => 
 		}
 
 	}
-	
-	
-	
-	!_bypassSubscode && notifyClient.sendEmail( templateId, email, 
-			{
-				personalisation: personalisation,
-				reference: "x-notify_send_emails"
-			})
+
+	!_bypassSubscode &&
+	notifyClient.sendEmail( templateId, email,
+		{
+			personalisation: personalisation,
+			reference: "x-notify_send_emails"
+	})
 	.catch( ( e ) => {
-		// Log the Notify errors
+		console.log((e.response && e.response.data) );
+		let errorDetails = (e.response && e.response.data) ? e.response.data : null;
 
-		console.log(e.error);
 		const currDate = new Date(),
-		currDateTime = currDate.getTime(),
-		errDetails = e.error.errors ? e.error.errors[0] : null,
-		statusCode = e.error.status_code,
-		msg = errDetails ? errDetails.message : null;
-
-
+		currDateTime = currDate.getTime();
+		let statusText, errDetails, statusCode, msg;
+		statusText = errorDetails?.errors?.[0]?.error || errorDetails?.status_code || null;
+		errDetails = errorDetails?.errors?.[0] || errorDetails || e.toString();
+		statusCode = errorDetails?.errors?.[0]?.code || errorDetails?.status_code || null;
+		msg = errorDetails?.errors?.[0]?.message || errorDetails?.message || errorDetails.toString();
+		console.error(` --------------------> Workersendemail GC Notify Single email API error: `);
+		console.error(errDetails);
 
 		if ( statusCode === 400 && msg.indexOf( "email_address" ) !== -1 ) {
 

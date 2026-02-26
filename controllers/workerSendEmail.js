@@ -158,18 +158,21 @@ async function init() {
 			reference: "x-notify_" + typeMailing
 		}).catch( ( e ) => {
 			// Log the Notify errors
-			// console.log( "Error in Notify" );
-			// console.log( e );
-			
-			parentPort.postMessage( { msg: "worker-Error in Notify" } );
-			
+			console.log( "------------------> Error in Notify" );
+			console.log((e.response && e.response.data) );
+			let errorDetails = (e.response && e.response.data) ? e.response.data : null;
+			let statusText, errDetails, statusCode, msg;
+			// Attach status + parsed body to error object
 			const currDate = new Date(),
-				currDateTime = currDate.getTime(),
-				errDetails = e.error.errors[0],
-				statusCode = e.error.status_code,
-				msg = errDetails.message;
-			
-			
+			currDateTime = currDate.getTime();
+			statusText = errorDetails?.errors?.[0]?.error || errorDetails?.status_code || null;
+			errDetails = errorDetails?.errors?.[0] || errorDetails || e.toString();
+			statusCode = errorDetails?.errors?.[0]?.code || errorDetails?.status_code || null;
+			msg = errorDetails?.errors?.[0]?.message || errorDetails?.message || e.message;
+			console.error(` --------------------> Workersendemail GC Notify Single email API error: `);
+			console.error(errDetails);
+			parentPort.postMessage( { msg: `worker-Error in Notify: ${statusCode} ${statusText} - ${msg}` } );
+
 			
 			if ( statusCode === 400 && msg.indexOf( "email_address" ) !== -1 ) {
 
