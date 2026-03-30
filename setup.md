@@ -140,6 +140,38 @@ Note: We need to set the Service ID associated to the topic details (field: `nSe
 
 * `baseFolder` Base folder where the application run. ex: "/x-notify" Default: undefined
 
+### GC Notify unsubscribe callback
+
+When GC Notify's `has_unsubscribe_link` flag is enabled on a template, Notify adds RFC 8058
+`List-Unsubscribe` / `List-Unsubscribe-Post` headers to outgoing emails. Email clients such as
+Gmail surface a one-click "Unsubscribe" button from these headers. When a recipient clicks that
+button, Notify sends a `POST` to the configured callback URL with the email address and template ID.
+
+CENS can receive this callback and remove the subscriber, mirroring the same removal logic used
+by the `/subs/remove/:subscode` endpoint.
+
+**Setup:**
+
+1. Set the environment variable:
+   * `NOTIFY_UNSUBSCRIBE_BEARER_TOKEN` — A strong random secret shared between CENS and Notify.
+     Notify will send this as `Authorization: Bearer <token>` on every callback request.
+     Default: none (endpoint returns 500 if unset).
+
+2. In the GC Notify admin, go to **API integration → Callbacks → Email unsubscribe requests**
+   and configure:
+   - **URL**: `https://<your-cens-host>/api/v1/notify/unsubscribe`
+   - **Bearer token**: the value of `NOTIFY_UNSUBSCRIBE_BEARER_TOKEN`
+
+3. Ensure each CENS topic's `templateId` field matches the Notify template UUID. The callback
+   uses `templateId` to resolve which topic's subscriber list to modify.
+
+**Notes:**
+- CENS's own `/subs/remove/:subscode` body link remains active and unchanged. The Notify
+  callback is a secondary path triggered only by email-client header-level unsubscribe buttons.
+- If the `templateId` in the callback doesn't match any CENS topic, a `200 OK` with
+  `{ skipped: true }` is returned (so Notify doesn't retry indefinitely).
+- If the subscriber is already removed, a `200 OK` with `{ skipped: true }` is returned.
+
 
 ### REDIS Default Configuration
 * `REDIS_ENV` Set environment value for Redis. Default: `stage` and `prod` which would leverage the redis-sentinel in production environment
