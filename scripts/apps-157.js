@@ -68,6 +68,11 @@ async function iterateUnconfirmed(){
                     createdAt: {
                         $lte: new Date("2022-09-01T11:36:59.999-04:00")
                       }
+                },
+                {
+                    notBefore: {
+                        $gte: 1662152493000
+                    }
                 }
             ]
        });
