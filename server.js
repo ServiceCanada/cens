@@ -110,10 +110,15 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	app.get('/subs/remove/:subscode/:emlParam', subsController.removeEmail); // Deprecated, to be removed after 60 days of it's deployment date
 	app.get('/subs/confirm/:subscode', subsController.confirmEmail);
 	app.get('/subs/remove/:subscode', subsController.removeEmail);
+	// RFC 8058 one-click unsubscribe: email client POSTs silently to the same URL
+	app.post('/subs/remove/:subscode',
+		bodyParser.urlencoded({extended: false, limit: '1kb'}),
+		subsController.removeEmailOneClick);
 	app.post('/subs/post',
 		bodyParser.urlencoded({extended:false, limit: '10kb'}),
 		subsController.addEmailPOST);
 	// app.get('/api/v0.1/subs/email/getAll', subsController.getAll); // TODO: kept for later if we create a "subscription" management page.
+
 
 
 
