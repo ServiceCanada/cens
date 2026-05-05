@@ -423,6 +423,97 @@ exports.confirmEmail = ( req, res, next ) => {
 //
 // Remove subscription email
 //
+// RFC 8058 one-click unsubscribe handler (POST /subs/remove/:subscode).
+// Called silently by email clients (Gmail, Apple Mail) when the user clicks
+// the email-header unsubscribe button. Performs the same removal as removeEmail
+// but returns JSON 200 instead of redirecting.
+//
+exports.removeEmailOneClick = async ( req, res ) => {
+	const { subscode } = req.params;
+	const currDate = new Date();
+
+	// RFC 8058 requires the body to contain List-Unsubscribe=One-Click
+	const body = req.body || {};
+	if ( body['List-Unsubscribe'] !== 'One-Click' ) {
+		res.status( 400 ).json( { error: 'Missing List-Unsubscribe=One-Click body parameter' } );
+		return;
+	}
+
+	let subsId;
+	try {
+		subsId = ObjectId( subscode );
+	} catch ( e ) {
+		res.status( 400 ).json( { error: 'Invalid subscode' } );
+		return;
+	}
+
+	const findQuery = { subscode: subsId };
+
+	let docSubs;
+	try {
+		docSubs = await dbConn.collection( 'subsConfirmed' ).findOneAndDelete( findQuery );
+	} catch ( e ) {
+		console.log( 'removeEmailOneClick: subsConfirmed error', e );
+		res.status( 500 ).json( { error: 'Database error' } );
+		return;
+	}
+
+	const docValue = docSubs.value;
+	if ( !docValue ) {
+		// Already removed or never existed — return 200 to prevent client retries
+		res.json( { skipped: true } );
+		return;
+	}
+
+	const { topicId, email } = docValue;
+	const topic = await getTopic( topicId );
+
+	// subs_logs entry (async, non-blocking)
+	dbConn.collection( 'subs_logs' ).updateOne(
+		{ _id: email },
+		{
+			$push: {
+				unsubsEmail: { createdAt: currDate, topicId, subscode: subsId, via: 'one-click-header' }
+			},
+			$currentDate: { lastUpdated: true }
+		}
+	).catch( ( e ) => console.log( 'removeEmailOneClick: subs_logs', e ) );
+
+	// Insert unsub audit record
+	dbConn.collection( 'subsUnsubs' ).insertOne( {
+		createdAt: docValue.createdAt,
+		confirmAt: docValue.confirmAt,
+		unsubAt: currDate,
+		email,
+		topicId
+	} );
+
+	// Remove from subsExist
+	try {
+		await dbConn.collection( 'subsExist' ).findOneAndDelete( { e: email, t: topicId } );
+	} catch ( e ) {
+		console.log( 'removeEmailOneClick: subsExist', e );
+	}
+
+	// Upsert subsRecents TTL entry
+	dbConn.collection( 'subsRecents' ).findOneAndUpdate(
+		{ subscode: subsId },
+		{
+			$set: {
+				createdAt: currDate,
+				email,
+				subscode: subsId,
+				topicId,
+				link: topic ? topic.unsubURL : null
+			}
+		},
+		{ upsert: true }
+	).catch( ( e ) => console.log( 'removeEmailOneClick: subsRecents', e ) );
+
+	res.json( { ok: true } );
+};
+
+//
 // @return; a HTTP redirection
 //
 exports.removeEmail = ( req, res, next ) => {
