@@ -9,8 +9,9 @@
 const NotifyClient = require('notifications-node-client').NotifyClient; // https://docs.notifications.service.gov.uk/node.html#node-js-client-documentation
 const entities = require("entities");
 const ObjectId = require('mongodb').ObjectId;
-const Queue = require('bull');
+const { Worker } = require('bullmq');
 const chalk = require('chalk');
+const { notifyQueue, workerConnection } = require('../notifyQueue');
 
 const dbConn = module.parent.exports.dbConn;
 
@@ -34,43 +35,24 @@ const processEnv = process.env,
 	_subsLinkSuffix = processEnv.subsLinkSuffix || "853e0212b92a127";
 
 
-const redisUri = process.env.REDIS_URI || 'notify-redis-1';
-const redisPort = process.env.REDIS_PORT || '6379';
-const redisSentinel1Uri = process.env.REDIS_SENTINEL_1_URI || '127.0.0.1';
-const redisSentinel1Port = process.env.REDIS_SENTINEL_1_PORT || '26379';
-const redisSentinel2Uri = process.env.REDIS_SENTINEL_2_URI || '127.0.0.1';
-const redisSentinel2Port = process.env.REDIS_SENTINEL_2_PORT || '26379';
-const redisMasterName = process.env.REDIS_MASTER_NAME || 'x-notify-master';
+var maxCompletedJobs = parseInt(process.env.COMPLETED_JOBS_TO_KEEP) || 300;
 
-var maxCompletedJobs = process.env.COMPLETED_JOBS_TO_KEEP || 300;
-
-let redisConf = {};
-if (process.env.NODE_ENV === 'prod') {
-	redisConf = {
-		redis: {
-			sentinels: [
-				{ host: redisSentinel1Uri, port: redisSentinel1Port },
-				{ host: redisSentinel2Uri, port: redisSentinel2Port }
-			],
-			name: redisMasterName,
-			host: redisUri,
-			port: redisPort
-		}
-	}
-} else {
-	redisConf = {
-		redis: {
-			host: redisUri,
-			port: redisPort,
-		}
-	}
-}
-
-const notifyQueue = new Queue('sendMail', redisConf);
-
-notifyQueue.process(async job => {
+const sendMailWorker = new Worker('sendMail-v2', async job => {
 	return await sendEmailViaNotify(job.data.email, job.data.templateId, job.data.personalisation, job.data.notifyKey);
-})
+}, { connection: workerConnection });
+
+sendMailWorker.on('failed', (job, err) => {
+	console.error(`sendMail Job ${job.id} failed: ${err.message}`);
+	console.log(err);
+});
+
+sendMailWorker.on('error', err => {
+	console.error('sendMail worker error:', err);
+});
+
+exports.closeWorker = async function closeWorker() {
+	await sendMailWorker.close();
+};
 
 let notifyCached = [],
 	notifyCachedIndexes = [],
@@ -1117,18 +1099,18 @@ exports.sendMailing = async ( req, res, next ) => {
 	personalisation = req.body.personalisation,
 	notifyKey = req.body.notifyKey;
 
-	notifyQueue.add({
-						email:email,
-						templateId:templateId,
-						personalisation:personalisation,
-						notifyKey:notifyKey
-					},
-				   	{
-						priority:10
-					},
-					{
-						removeOnComplete: maxCompletedJobs
-					}
+	notifyQueue.add(
+		'send-mailing-email',
+		{
+			email:email,
+			templateId:templateId,
+			personalisation:personalisation,
+			notifyKey:notifyKey
+		},
+		{
+			priority:10,
+			removeOnComplete: { count: maxCompletedJobs }
+		}
 	);
 
 
@@ -1146,17 +1128,17 @@ sendNotifyConfirmEmail = async (email, confirmCode, templateId, notifyKey) => {
 								confirm_link: _confirmBaseURL + confirmCode + "/" + _subsLinkSuffix
 							};
 
-	notifyQueue.add({
-						email:email,
-						templateId:templateId,
-						personalisation:personalisation,
-						notifyKey:notifyKey
-					},
-				   	{
-						priority:5
-					},
-					{
-						removeOnComplete: maxCompletedJobs
-					}
+	notifyQueue.add(
+		'send-confirmation-email',
+		{
+			email:email,
+			templateId:templateId,
+			personalisation:personalisation,
+			notifyKey:notifyKey
+		},
+		{
+			priority:5,
+			removeOnComplete: { count: maxCompletedJobs }
+		}
 	);
 }

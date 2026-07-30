@@ -1,7 +1,8 @@
 const MongoClient = require('mongodb').MongoClient;
+const { Worker } = require('bullmq');
 
 const mailingManager = require('./mailing');
-const { bulkQueue } = require("../notifyQueue");
+const { bulkQueue, workerConnection } = require("../notifyQueue");
 const { letUsKnow } = require("./subscriptions");
 const BASE_URL = process.env.BASE_URL || "https://apps.canada.ca/x-notify";
 const BULK_API = process.env.BULK_API || "https://api.notification.canada.ca/v2/notifications/bulk";
@@ -20,7 +21,7 @@ let mongoInstance,
 	dbConn,
 	_notifyUsNotBeforeTimeLimit = 0;
 
-bulkQueue.process(async (job) => {
+const bulkWorker = new Worker('bulk-api-v2', async (job) => {
 
 	let jobData, emailLength,
 		jobSuccess=false;
@@ -112,13 +113,21 @@ bulkQueue.process(async (job) => {
 		  await new Promise(resolve => setTimeout( resolve, BULK_Q_JOB_DELAY_TIME )); // delay between each API call set by CDS
 		}
     }
-});
+}, { connection: workerConnection });
 
 // Listen for failures
-bulkQueue.on('failed', (job, err) => {
+bulkWorker.on('failed', (job, err) => {
     console.error(`bulkQueue Job ${job.id} failed: ${err.message}`);
 	console.log(err)
 });
+
+bulkWorker.on('error', err => {
+	console.error('bulkQueue worker error:', err);
+});
+
+exports.closeWorker = async function closeWorker() {
+	await bulkWorker.close();
+};
 
 exports.sendBulkEmails = async ( mailingId, topicId ) => {
 	let mailingTopic, mailing_name, emailLength, bulkEmailBody;
@@ -155,20 +164,21 @@ exports.sendBulkEmails = async ( mailingId, topicId ) => {
 			emailLength = Buffer.byteLength( JSON.stringify(bulkEmailBody) , "utf8" );
 
 			bulkQueue.add(
-			{
-				bulkEmailBody: bulkEmailBody,
-				notifyKey: mailingTopic.notifyKey,
-				mailingId: mailingId,
-			},
-			{
-				attempts: BULK_Q_ATTEMPTS, // Maximum number of retries
-				backoff: {
-				  type: BULK_Q_TYPE, // Use exponential backoff or fixed
-				  delay: BULK_Q_DELAY // Initial delay of 1 second (doubles each retry)
+				'send-bulk-email',
+				{
+					bulkEmailBody: bulkEmailBody,
+					notifyKey: mailingTopic.notifyKey,
+					mailingId: mailingId,
 				},
-				removeOnComplete: BULK_Q_REMOVE_ON_COMP,
-				removeOnFail: BULK_Q_REMOVE_ON_FAIL
-			}
+				{
+					attempts: BULK_Q_ATTEMPTS, // Maximum number of retries
+					backoff: {
+					  type: BULK_Q_TYPE, // Use exponential backoff or fixed
+					  delay: BULK_Q_DELAY // Initial delay of 1 second (doubles each retry)
+					},
+					removeOnComplete: BULK_Q_REMOVE_ON_COMP,
+					removeOnFail: BULK_Q_REMOVE_ON_FAIL
+				}
 			);
 		}
 

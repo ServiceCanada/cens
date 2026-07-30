@@ -79,6 +79,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	const adminController = require('./controllers/admin');
 	const mailingController = require('./controllers/mailing_view');
 	const userController = require('./controllers/user');
+	const bulkApiMailer = require('./controllers/bulkApiMailer');
 
 	/**
 	 * Express configuration.
@@ -302,11 +303,23 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	 * Start Express server.
 	 */
 	//app.on('ready', function() { 
-		app.listen(app.get('port'), () => {
+		const server = app.listen(app.get('port'), () => {
 			console.log('%s App is running at http://localhost:%d in %s mode', chalk.green('✓'), app.get('port'), app.get('env'));
 			console.log('  Press CTRL-C to stop\n');
 		});
 	//}); 
+
+	async function shutdown() {
+		server.close();
+		await Promise.all([
+			subsController.closeWorker(),
+			bulkApiMailer.closeWorker(),
+			notifyQueue.closeQueues()
+		]);
+	}
+
+	process.once('SIGTERM', shutdown);
+	process.once('SIGINT', shutdown);
 }).catch( (e) => { console.log( "%s MongoDB ERRROR: %s", chalk.red('✗'), e ) } );
 
 process.once('SIGUSR2', function () {
