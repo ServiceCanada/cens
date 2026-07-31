@@ -123,12 +123,16 @@ exports.logout = (req, res) => {
 	memoryUserSession[ userId ] && delete memoryUserSession[ userId ];
 	
 	// logout
-	req.logout();
-	req.session.destroy((err) => {
-		if ( err ) {
-			console.log('Error : Failed to destroy the session during logout.', err);
+	req.logout((logoutErr) => {
+		if ( logoutErr ) {
+			console.log('Error : Failed to logout.', logoutErr);
 		}
-		req.user = null;
-		res.redirect( ( process.env.baseFolder || "" ) + "/api/v1/mailing/login" );
+		req.session.destroy((err) => {
+			if ( err ) {
+				console.log('Error : Failed to destroy the session during logout.', err);
+			}
+			req.user = null;
+			res.redirect( ( process.env.baseFolder || "" ) + "/api/v1/mailing/login" );
+		});
 	});
 };
