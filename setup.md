@@ -81,7 +81,7 @@ Create a user in Database (for local database)
 * `successJSO` JavaScript Object returned on successful JSON API call. Default: `{ statusCode: 200, ok: 1 }`
 * `cErrorsJSO` JavaScript Object returned on client error, like bad email format or missing parameter. Default `{ statusCode: 400, bad: 1, msg: "Bad request" }`
 * `sErrorsJSO` JavaScript Object returned on client error, like MongoDB can't connect. Default: `{ statusCode: 500, err: 1 }`
-* `notifyEndPoint` Notify end point. Default: `https://api.notification.alpha.canada.ca`
+* `notifyEndPoint` Notify end point. Default: `https://api.notification.canada.ca`
 * `notSendBefore` Number of minute before to accept a resend email request. Default: `25`
 
 * `Host` URL of the host server. Default: `0.0.0.0`

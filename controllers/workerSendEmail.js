@@ -21,7 +21,7 @@ if ( !workerData ) {
 const { topicId, mailingSubject, mailingBody, typeMailing, sentTo } = workerData;
 
 const processEnv = process.env,
-	_notifyEndPoint = processEnv.notifyEndPoint ||  "https://api.notification.alpha.canada.ca",
+	_notifyEndPoint = processEnv.notifyEndPoint ||  "https://api.notification.canada.ca",
 	_unsubBaseURL = process.env.removeURL || "https://apps.canada.ca/x-notify/subs/remove/",
 	_subsLinkSuffix = process.env.subsLinkSuffix || "853e0212b92a127"
 
