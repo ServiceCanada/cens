@@ -18,8 +18,8 @@
     "prod": "node server.js"
   },
   "dependencies": {
-    "@bull-board/api": "^6.7.10",
-    "@bull-board/express": "^6.7.10",
+    "@bull-board/api": "^6.21.3",
+    "@bull-board/express": "^6.21.3",
     "aws-sdk": "^2.1692.0",
     "body-parser": "^2.3.0",
     "bullmq": "^6.0.0",
