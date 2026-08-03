@@ -22,7 +22,7 @@
     "@bull-board/express": "^6.21.3",
     "aws-sdk": "^2.1692.0",
     "body-parser": "^2.3.0",
-    "bullmq": "^6.0.0",
+    "bullmq": "^5.71.0",
     "chalk": "^3.0.0",
     "compression": "^1.8.1",
     "connect-mongo": "^6.0.0",
