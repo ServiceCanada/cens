@@ -307,7 +307,7 @@ exports.confirmEmail = ( req, res, next ) => {
 		subscode = new ObjectId();
 	} else {
 		try {
-			subscode = ObjectId( subscode );
+			subscode = new ObjectId( subscode );
 		} catch ( e ) {
 
 			// The subscode is invalid, check if it is our edge case
@@ -325,7 +325,7 @@ exports.confirmEmail = ( req, res, next ) => {
 	}
 
 	dbConn.collection( "subsUnconfirmed" )
-		.findOneAndDelete( findQuery )
+		.findOneAndDelete( findQuery, { includeResultMetadata: true } )
 		.then( async ( docSubs ) => {
 
 			const docValue = docSubs.value;
@@ -422,7 +422,7 @@ exports.removeEmail = ( req, res, next ) => {
 		findQuery.email = emlParam;
 	} else {
 		try {
-			subscode = ObjectId( subscode );
+			subscode = new ObjectId( subscode );
 		} catch ( e ) {
 
 			// The subscode is invalid, check if it is our edge case
@@ -442,7 +442,7 @@ exports.removeEmail = ( req, res, next ) => {
 	
 	// findOneAndDeleted in subsConfirmedEmail document
 	dbConn.collection( "subsConfirmed" )
-		.findOneAndDelete( findQuery )
+		.findOneAndDelete( findQuery, { includeResultMetadata: true } )
 		.then( async ( docSubs ) => {
 
 			let docValue = docSubs.value;
@@ -450,13 +450,13 @@ exports.removeEmail = ( req, res, next ) => {
 			// Try if that code was converted
 			// To support deprecated query where the email was included in the URL, the subsequent URL can be made permanent after 60 days of it's deployment date
 			if ( !docValue && findQuery.email ) {
-				docNewSubs = await dbConn.collection( "subsConfirmedNewCode" ).findOneAndDelete( findQuery );
+				docNewSubs = await dbConn.collection( "subsConfirmedNewCode" ).findOneAndDelete( findQuery, { includeResultMetadata: true } );
 				if ( !docNewSubs.value ) {
 					res.redirect( await getRedirectForRecents( findQuery ) || _errorPage );
 					return;
 				}
 				findQuery.subscode = docNewSubs.value.newsubscode;
-				docSubsConf = await dbConn.collection( "subsConfirmed" ).findOneAndDelete( findQuery );
+				docSubsConf = await dbConn.collection( "subsConfirmed" ).findOneAndDelete( findQuery, { includeResultMetadata: true } );
 				docValue = docNewSubs.value;
 			}
 			
@@ -597,7 +597,8 @@ resendEmailNotify = ( email, topicId, currDate ) => {
 				$set: {
 					notBefore: currDate.setMinutes( currDate.getMinutes() + _nbMinutesBF )
 				}
-			}
+			},
+			{ includeResultMetadata: true }
 		).then( async ( docSubs ) => {
 			
 			const docValue = docSubs.value;

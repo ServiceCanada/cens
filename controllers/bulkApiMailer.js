@@ -60,7 +60,7 @@ const bulkWorker = new Worker('bulk-api-v2', async (job) => {
 		currDateTime = currDate.getTime();
 
 		// Connect to MongoDB
-        mongoInstance = await MongoClient.connect(process.env.MONGODB_URI || '', { useUnifiedTopology: true });
+        mongoInstance = await MongoClient.connect(process.env.MONGODB_URI || '');
         dbConn = mongoInstance.db(process.env.MONGODB_NAME || 'subs');
 
         // Log the error into MongoDB
@@ -188,7 +188,7 @@ exports.sendBulkEmails = async ( mailingId, topicId ) => {
 		const currDate = new Date(),
 		currDateTime = currDate.getTime();
 
-		mongoInstance = await MongoClient.connect(process.env.MONGODB_URI || '', { useUnifiedTopology: true });
+		mongoInstance = await MongoClient.connect(process.env.MONGODB_URI || '');
         dbConn = mongoInstance.db(process.env.MONGODB_NAME || 'subs');
 
 		dbConn.collection( "notify_logs" ).insertOne(
@@ -253,7 +253,7 @@ formatSubsArray = async ( listEmail ) => {
  * Utilities function
  */
 getConfirmedSubscriberAsArray = async ( topicId ) => {
-	mongoInstance = await MongoClient.connect(process.env.MONGODB_URI || '', { useUnifiedTopology: true });
+	mongoInstance = await MongoClient.connect(process.env.MONGODB_URI || '');
     dbConn = mongoInstance.db(process.env.MONGODB_NAME || 'subs');
 
 	// Get all the emails for the given topic

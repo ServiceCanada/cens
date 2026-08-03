@@ -45,7 +45,7 @@ passport.deserializeUser( ( id, done ) => {
 	// Query MongoDB
 	dbConn.collection( "users" ).findOne( 
 		{
-			_id: ObjectId( id )
+			_id: new ObjectId( id )
 		},
 		{
 			projection: {

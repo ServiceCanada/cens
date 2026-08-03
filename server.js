@@ -64,7 +64,7 @@ const app = express();
  * Connect to MongoDB.
  */
 
-MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).then( ( mongoInstance ) => {
+MongoClient.connect( processEnv.MONGODB_URI || '' ).then( ( mongoInstance ) => {
 
 	module.exports.dbConn = mongoInstance.db( processEnv.MONGODB_NAME || 'subs' );
 	//app.emit('ready');

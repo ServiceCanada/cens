@@ -250,7 +250,8 @@ isAuthorizedToDownload = async( req, task ) => {
 			$currentDate: { 
 				lastUpdated: true
 			}
-		}
+		},
+		{ includeResultMetadata: true }
 	)
 
 	if ( !docTopic.value ) {
@@ -587,7 +588,7 @@ addBulk = async ( emails, topicId, currDate ) => {
 removeBulk = async ( emails, topicId ) => {
 
 	// Remove from confirmed list
-	dbConn.collection( "subsConfirmed" ).removeMany({ 
+	dbConn.collection( "subsConfirmed" ).deleteMany({ 
 		email: { 
 			$in:  emails
 		}, 

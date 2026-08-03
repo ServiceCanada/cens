@@ -27,7 +27,7 @@ const processEnv = process.env,
 
 let dbConn;
 
-MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).then( ( mongoInstance ) => {
+MongoClient.connect( processEnv.MONGODB_URI || '' ).then( ( mongoInstance ) => {
 
 	dbConn = mongoInstance.db( processEnv.MONGODB_NAME || 'subs' );
 	
