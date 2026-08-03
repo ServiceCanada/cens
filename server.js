@@ -15,7 +15,7 @@ const chalk = require('chalk'); // To color message in console log
 
 const passport = require('passport'); // Authentication	 
 const session = require('express-session');
-const MongoStore = require('connect-mongo')(session);
+const { MongoStore } = require('connect-mongo');
 const BasicStrategy = require('passport-http').BasicStrategy;
 
 const jwt = require('jsonwebtoken'); // JWT Authentication
@@ -194,9 +194,9 @@ MongoClient.connect( processEnv.MONGODB_URI || '' ).then( ( mongoInstance ) => {
 		cookie: {
 			maxAge: 1209600000
 		}, // two weeks in milliseconds
-		store: new MongoStore({
-			url: process.env.MONGODB_URI,
-			autoReconnect: true,
+		store: MongoStore.create({
+			mongoUrl: process.env.MONGODB_URI,
+			dbName: process.env.MONGODB_NAME || 'subs'
 		})
 	}));
 	app.use(passport.initialize());
