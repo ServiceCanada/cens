@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   notify-mongo-1:
-    image: mongo:4.4.30
+    image: mongo:8.0
     container_name: notify-mongo-1
     ports:
      - target: 27017
@@ -15,7 +15,7 @@ services:
       - mongo_config:/data/configdb  # Configuration volume
 
   notify-redis-1:
-    image: redis:6.2.0
+    image: redis:8.0-alpine
     container_name: notify-redis-1
     ports:
      - "6379:6379"

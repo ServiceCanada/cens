@@ -26,8 +26,6 @@ async function renderTemplate( tmplName, data ) {
  * Management of Mailing
  */
 exports.v_mailingManage = async ( req, res, next ) => {
-
-	const userId = req.body.userId;
 	
 	if ( !req.user.accessToTopicId ) {
 		res.status( 401 );
