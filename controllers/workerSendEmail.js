@@ -21,7 +21,7 @@ if ( !workerData ) {
 const { topicId, mailingSubject, mailingBody, typeMailing, sentTo } = workerData;
 
 const processEnv = process.env,
-	_notifyEndPoint = processEnv.notifyEndPoint ||  "https://api.notification.alpha.canada.ca",
+	_notifyEndPoint = processEnv.notifyEndPoint ||  "https://api.notification.canada.ca",
 	_unsubBaseURL = process.env.removeURL || "https://apps.canada.ca/x-notify/subs/remove/",
 	_subsLinkSuffix = process.env.subsLinkSuffix || "853e0212b92a127"
 
@@ -159,16 +159,15 @@ async function init() {
 		}).catch( ( e ) => {
 			// Log the Notify errors
 			console.log( "------------------> Error in Notify" );
-			console.log((e.response && e.response.data) );
-			let errorDetails = (e.response && e.response.data) ? e.response.data : null;
+			const errorDetails = e?.response?.data || null;
 			let statusText, errDetails, statusCode, msg;
 			// Attach status + parsed body to error object
 			const currDate = new Date(),
 			currDateTime = currDate.getTime();
 			statusText = errorDetails?.errors?.[0]?.error || errorDetails?.status_code || null;
-			errDetails = errorDetails?.errors?.[0] || errorDetails || e.toString();
+			errDetails = errorDetails?.errors?.[0] || errorDetails || String(e);
 			statusCode = errorDetails?.errors?.[0]?.code || errorDetails?.status_code || null;
-			msg = errorDetails?.errors?.[0]?.message || errorDetails?.message || e.message;
+			msg = errorDetails?.errors?.[0]?.message || errorDetails?.message || e?.message || String(e);
 			console.error(` --------------------> Workersendemail GC Notify Single email API error: `);
 			console.error(errDetails);
 			parentPort.postMessage( { msg: `worker-Error in Notify: ${statusCode} ${statusText} - ${msg}` } );

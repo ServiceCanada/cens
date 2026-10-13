@@ -22,7 +22,7 @@ const processEnv = process.env,
 	_successJSO = processEnv.successJSO || { statusCode: 200, ok: 1 },
 	_cErrorsJSO = processEnv.cErrorsJSO ||  { statusCode: 400, bad: 1, msg: "Bad request" },
 	_sErrorsJSO = processEnv.sErrorsJSO ||  { statusCode: 500, err: 1 },
-	_notifyEndPoint = processEnv.notifyEndPoint ||  "https://api.notification.alpha.canada.ca",
+	_notifyEndPoint = processEnv.notifyEndPoint ||  "https://api.notification.canada.ca",
 	_confirmBaseURL = processEnv.confirmBaseURL ||  "https://apps.canada.ca/x-notify/subs/confirm/",
 	_nbMinutesBF = processEnv.notSendBefore || 25, // Default of 25 minutes.
 	_bypassSubscode = processEnv.subscode,
@@ -232,7 +232,6 @@ exports.addEmailPOST = async ( req, res, next ) => {
 
 		// Get the topic
 		const topic = await getTopic( topicId );
-
 		// No topic = no good
 		if ( !topic || !topic.inputErrURL || !topic.thankURL || !topic.failURL ) {
 			console.log( "addEmailPOST: check topic information" );
@@ -749,16 +748,15 @@ sendEmailViaNotify = async ( email, templateId, personalisation, notifyKey ) => 
 			reference: "x-notify_send_emails"
 	})
 	.catch( ( e ) => {
-		console.log((e.response && e.response.data) );
-		let errorDetails = (e.response && e.response.data) ? e.response.data : null;
+		const errorDetails = e?.response?.data || null;
 
 		const currDate = new Date(),
 		currDateTime = currDate.getTime();
 		let statusText, errDetails, statusCode, msg;
 		statusText = errorDetails?.errors?.[0]?.error || errorDetails?.status_code || null;
-		errDetails = errorDetails?.errors?.[0] || errorDetails || e.toString();
+		errDetails = errorDetails?.errors?.[0] || errorDetails || String(e);
 		statusCode = errorDetails?.errors?.[0]?.code || errorDetails?.status_code || null;
-		msg = errorDetails?.errors?.[0]?.message || errorDetails?.message || errorDetails.toString();
+		msg = errorDetails?.errors?.[0]?.message || errorDetails?.message || e?.message || String(e);
 		console.error(` --------------------> Workersendemail GC Notify Single email API error: `);
 		console.error(errDetails);
 
