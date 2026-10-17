@@ -23,7 +23,7 @@
     "aws-sdk": "^2.1692.0",
     "bull": "^4.16.5",
     "chalk": "^3.0.0",
-    "compression": "^1.8.0",
+    "compression": "^1.8.2",
     "connect-mongo": "^3.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
