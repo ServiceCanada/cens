@@ -157,18 +157,19 @@ async function init() {
 			personalisation: personalisation,
 			reference: "x-notify_" + typeMailing
 		}).catch( ( e ) => {
+			const currDate = new Date(),
+			currDateTime = currDate.getTime();
 			// Log the Notify errors
-			console.log( "------------------> Error in Notify" );
+			console.log(`[${currDate.toISOString()}] ERR_WORKER_SENDEMAIL: Error in Notify` );
 			const errorDetails = e?.response?.data || null;
 			let statusText, errDetails, statusCode, msg;
 			// Attach status + parsed body to error object
-			const currDate = new Date(),
-			currDateTime = currDate.getTime();
+
 			statusText = errorDetails?.errors?.[0]?.error || errorDetails?.status_code || null;
 			errDetails = errorDetails?.errors?.[0] || errorDetails || String(e);
 			statusCode = errorDetails?.errors?.[0]?.code || errorDetails?.status_code || null;
 			msg = errorDetails?.errors?.[0]?.message || errorDetails?.message || e?.message || String(e);
-			console.error(` --------------------> Workersendemail GC Notify Single email API error: `);
+			console.error(`[${currDate.toISOString()}] ERR_WORKER_SENDEMAIL: Workersendemail GC Notify Single email API error:`);
 			console.error(errDetails);
 			parentPort.postMessage( { msg: `worker-Error in Notify: ${statusCode} ${statusText} - ${msg}` } );
 

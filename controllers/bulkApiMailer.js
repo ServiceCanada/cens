@@ -24,6 +24,8 @@ bulkQueue.process(async (job) => {
 
 	let jobData, emailLength,
 		jobSuccess=false;
+	const currDate = new Date(),
+		currDateTime = currDate.getTime();
     try {
         const mailingState = mailingManager.mailingState;
         jobData = job.data;
@@ -56,7 +58,7 @@ bulkQueue.process(async (job) => {
 			err.errorCode = errorDetails?.errors?.[0]?.code || errorDetails?.status_code || null;
 			err.errorMessage = errorDetails?.errors?.[0]?.message || errorDetails?.message ||response.statusText;
 
-			console.error(` --------------------> GC Notify Bulk API error: `);
+			console.error(`[${currDate.toISOString()}] ERR_BULK_MAILER: GC Notify Bulk API error: `);
 			console.error(err);
 			throw err;
 		} else {
@@ -67,9 +69,6 @@ bulkQueue.process(async (job) => {
 		}
 
     } catch ( error ) {
-		const currDate = new Date(),
-		currDateTime = currDate.getTime();
-
 		const httpStatus = error.httpStatus || null;
 		const errCode = error.errorCode || error.code || null;
 		const errMsg = error.errorMessage || error.message;
@@ -92,7 +91,7 @@ bulkQueue.process(async (job) => {
 					emailLength: emailLength,
                 });
             } catch ( dbError ) {
-                console.error( "Failed to log error in notify_logs:", dbError );
+                console.error( `[${currDate.toISOString()}] ERR_BULK_MAILER: Failed to log error in notify_logs:`, dbError );
 				throw new Error ( "Bulk Queue process DB error " + dbError.message )
             }
         }
@@ -114,7 +113,7 @@ bulkQueue.process(async (job) => {
 
         // Handle retryable errors
         if ( error.message.includes("GC Notify Bulk API error: 5")) {
-			console.log("===============================>>>>>>>>>>>>>>>>================ Retrying job due to server error...");
+			console.log(`[${currDate.toISOString()}] ERR_BULK_MAILER: Retrying job due to server error...`);
 			throw new Error("Retryable error"); // Ensures Bull retries
         }
 

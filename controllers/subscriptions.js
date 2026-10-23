@@ -757,7 +757,7 @@ sendEmailViaNotify = async ( email, templateId, personalisation, notifyKey ) => 
 		errDetails = errorDetails?.errors?.[0] || errorDetails || String(e);
 		statusCode = errorDetails?.errors?.[0]?.code || errorDetails?.status_code || null;
 		msg = errorDetails?.errors?.[0]?.message || errorDetails?.message || e?.message || String(e);
-		console.error(` --------------------> Workersendemail GC Notify Single email API error: `);
+		console.error(`[${currDate.toISOString()}] ERR_SUBSCRIPTION: Workersendemail GC Notify Single email API error: `);
 		console.error(errDetails);
 
 		if ( statusCode === 400 && msg.indexOf( "email_address" ) !== -1 ) {
