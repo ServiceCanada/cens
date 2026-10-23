@@ -5,7 +5,7 @@
  * @author: Government of Canada; @duboisp
  * @version: 1.0
  ===========================*/
-
+const helpers = require('./helpers');
 const NotifyClient = require('notifications-node-client').NotifyClient; // https://docs.notifications.service.gov.uk/node.html#node-js-client-documentation
 const entities = require("entities");
 const ObjectId = require('mongodb').ObjectId;
@@ -757,7 +757,7 @@ sendEmailViaNotify = async ( email, templateId, personalisation, notifyKey ) => 
 		errDetails = errorDetails?.errors?.[0] || errorDetails || String(e);
 		statusCode = errorDetails?.errors?.[0]?.code || errorDetails?.status_code || null;
 		msg = errorDetails?.errors?.[0]?.message || errorDetails?.message || e?.message || String(e);
-		console.error(`[${currDate.toISOString()}] ERR_SUBSCRIPTION: Workersendemail GC Notify Single email API error: `);
+		console.error(`[${helpers.getLocaleDateTime()}] ERR_SUBSCRIPTION: Workersendemail GC Notify Single email API error: `);
 		console.error(errDetails);
 
 		if ( statusCode === 400 && msg.indexOf( "email_address" ) !== -1 ) {

@@ -10,7 +10,7 @@ const MongoClient = require('mongodb').MongoClient;
 const NotifyClient = require('notifications-node-client').NotifyClient;
 
 const ObjectId = require('mongodb').ObjectId;
-
+const helpers = require('./helpers');
 const { workerData, parentPort } = require('worker_threads')
 
 
@@ -160,7 +160,7 @@ async function init() {
 			const currDate = new Date(),
 			currDateTime = currDate.getTime();
 			// Log the Notify errors
-			console.log(`[${currDate.toISOString()}] ERR_WORKER_SENDEMAIL: Error in Notify` );
+			console.log(`[${helpers.getLocaleDateTime()}] ERR_WORKER_SENDEMAIL: Error in Notify` );
 			const errorDetails = e?.response?.data || null;
 			let statusText, errDetails, statusCode, msg;
 			// Attach status + parsed body to error object
@@ -169,7 +169,7 @@ async function init() {
 			errDetails = errorDetails?.errors?.[0] || errorDetails || String(e);
 			statusCode = errorDetails?.errors?.[0]?.code || errorDetails?.status_code || null;
 			msg = errorDetails?.errors?.[0]?.message || errorDetails?.message || e?.message || String(e);
-			console.error(`[${currDate.toISOString()}] ERR_WORKER_SENDEMAIL: Workersendemail GC Notify Single email API error:`);
+			console.error(`[${helpers.getLocaleDateTime()}] ERR_WORKER_SENDEMAIL: Workersendemail GC Notify Single email API error:`);
 			console.error(errDetails);
 			parentPort.postMessage( { msg: `worker-Error in Notify: ${statusCode} ${statusText} - ${msg}` } );
 
