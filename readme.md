@@ -19,6 +19,13 @@ or
 `docker-compose up --build`
 
 
+## Docker build
+
+Development build: `docker build --target development .`
+CID build: `docker build --target development --build-arg INSTALL_COMMAND=ci .`
+Production build: `docker build  .`
+
+
 ## Create topic
 
 A topic could be compared to a mailing list.
