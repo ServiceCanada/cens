@@ -15,7 +15,7 @@ const chalk = require('chalk'); // To color message in console log
 
 const passport = require('passport'); // Authentication	 
 const session = require('express-session');
-const MongoStore = require('connect-mongo')(session);
+const { MongoStore } = require('connect-mongo');
 const BasicStrategy = require('passport-http').BasicStrategy;
 
 const jwt = require('jsonwebtoken'); // JWT Authentication
@@ -64,7 +64,7 @@ const app = express();
  * Connect to MongoDB.
  */
 
-MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).then( ( mongoInstance ) => {
+MongoClient.connect( processEnv.MONGODB_URI || '' ).then( ( mongoInstance ) => {
 
 	module.exports.dbConn = mongoInstance.db( processEnv.MONGODB_NAME || 'subs' );
 	//app.emit('ready');
@@ -79,6 +79,7 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	const adminController = require('./controllers/admin');
 	const mailingController = require('./controllers/mailing_view');
 	const userController = require('./controllers/user');
+	const bulkApiMailer = require('./controllers/bulkApiMailer');
 
 	/**
 	 * Express configuration.
@@ -193,9 +194,9 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 		cookie: {
 			maxAge: 1209600000
 		}, // two weeks in milliseconds
-		store: new MongoStore({
-			url: process.env.MONGODB_URI,
-			autoReconnect: true,
+		store: MongoStore.create({
+			mongoUrl: process.env.MONGODB_URI,
+			dbName: process.env.MONGODB_NAME || 'subs'
 		})
 	}));
 	app.use(passport.initialize());
@@ -302,11 +303,23 @@ MongoClient.connect( processEnv.MONGODB_URI || '', {useUnifiedTopology: true} ).
 	 * Start Express server.
 	 */
 	//app.on('ready', function() { 
-		app.listen(app.get('port'), () => {
+		const server = app.listen(app.get('port'), () => {
 			console.log('%s App is running at http://localhost:%d in %s mode', chalk.green('✓'), app.get('port'), app.get('env'));
 			console.log('  Press CTRL-C to stop\n');
 		});
 	//}); 
+
+	async function shutdown() {
+		server.close();
+		await Promise.all([
+			subsController.closeWorker(),
+			bulkApiMailer.closeWorker(),
+			notifyQueue.closeQueues()
+		]);
+	}
+
+	process.once('SIGTERM', shutdown);
+	process.once('SIGINT', shutdown);
 }).catch( (e) => { console.log( "%s MongoDB ERRROR: %s", chalk.red('✗'), e ) } );
 
 process.once('SIGUSR2', function () {

@@ -98,7 +98,7 @@ exports.mailingView = mailingView;
 async function mailingView( paramMailingId ) {
 	// Input: MailingID
 	
-	const rDoc = await dbConn.collection( "mailing" ).findOne( { _id: ObjectId( paramMailingId ) } );
+	const rDoc = await dbConn.collection( "mailing" ).findOne( { _id: new ObjectId( paramMailingId ) } );
 	if ( !rDoc ) {
 		console.log( "mailingView: Invalid mailing id: " + paramMailingId );
 		throw new Error( "Mailing unavailable" );
@@ -125,7 +125,7 @@ exports.mailingGetHistory = async ( mailingId ) => {
 
 	const rDoc = await dbConn.collection( "mailingHistory" ).find( 
 		{
-			mailingId: ObjectId( mailingId )
+			mailingId: new ObjectId( mailingId )
 		},
 		{
 			sort: {
@@ -233,7 +233,7 @@ exports.mailingCancelSendToSub = async ( mailingId ) => {
 }
 
 exports.mailingSendToSub = async ( mailingId ) => {
-	let mailing = await dbConn.collection( "mailing" ).findOne( { _id: ObjectId( mailingId ) } );
+	let mailing = await dbConn.collection( "mailing" ).findOne( { _id: new ObjectId( mailingId ) } );
 	if ( !mailing ) {
 		console.log( "mailingSendToSub: Invalid mailing id: " + mailingId );
 		throw new Error( "mailingSendToSub: Mailing unavailable" );
@@ -332,7 +332,7 @@ async function mailingUpdate( mailingId, newHistoryState, options ) {
 		Object.assign( {},
 			history,
 			{
-				mailingId: ObjectId( mailingId )
+				mailingId: new ObjectId( mailingId )
 			}
 		)
 	);
@@ -340,7 +340,7 @@ async function mailingUpdate( mailingId, newHistoryState, options ) {
 	
 	// Update the mailing
 	let findQuery = {
-		_id: ObjectId( mailingId )
+		_id: new ObjectId( mailingId )
 	};
 	if ( historyState ) {
 		findQuery.state = historyState
@@ -362,7 +362,8 @@ async function mailingUpdate( mailingId, newHistoryState, options ) {
 				updatedAt: true
 			}
 			
-		}
+		},
+		{ includeResultMetadata: true }
 	);
 	
 	// Check if the operation was successful, if not, we need to log in the history
@@ -372,7 +373,7 @@ async function mailingUpdate( mailingId, newHistoryState, options ) {
 			createdAt: currDate,
 			state: historyState || _mailingState.draft, // Put it back as draft if previous state is unknown
 			comments: newHistoryState + " fail",
-			mailingId: ObjectId( mailingId )
+			mailingId: new ObjectId( mailingId )
 		};
 		
 		const rInsertFail = dbConn.collection( "mailingHistory" ).insertOne( 
@@ -382,7 +383,7 @@ async function mailingUpdate( mailingId, newHistoryState, options ) {
 		
 		dbConn.collection( "mailing" ).findOneAndUpdate( 
 			{
-				_id: ObjectId( mailingId ),
+				_id: new ObjectId( mailingId ),
 				state: newHistoryState
 			},
 			{
