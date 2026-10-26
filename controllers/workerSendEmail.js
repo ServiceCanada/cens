@@ -10,7 +10,7 @@ const MongoClient = require('mongodb').MongoClient;
 const NotifyClient = require('notifications-node-client').NotifyClient;
 
 const ObjectId = require('mongodb').ObjectId;
-
+const helpers = require('./helpers');
 const { workerData, parentPort } = require('worker_threads')
 
 
@@ -21,7 +21,7 @@ if ( !workerData ) {
 const { topicId, mailingSubject, mailingBody, typeMailing, sentTo } = workerData;
 
 const processEnv = process.env,
-	_notifyEndPoint = processEnv.notifyEndPoint ||  "https://api.notification.alpha.canada.ca",
+	_notifyEndPoint = processEnv.notifyEndPoint ||  "https://api.notification.canada.ca",
 	_unsubBaseURL = process.env.removeURL || "https://apps.canada.ca/x-notify/subs/remove/",
 	_subsLinkSuffix = process.env.subsLinkSuffix || "853e0212b92a127"
 
@@ -157,19 +157,22 @@ async function init() {
 			personalisation: personalisation,
 			reference: "x-notify_" + typeMailing
 		}).catch( ( e ) => {
-			// Log the Notify errors
-			// console.log( "Error in Notify" );
-			// console.log( e );
-			
-			parentPort.postMessage( { msg: "worker-Error in Notify" } );
-			
 			const currDate = new Date(),
-				currDateTime = currDate.getTime(),
-				errDetails = e.error.errors[0],
-				statusCode = e.error.status_code,
-				msg = errDetails.message;
-			
-			
+			currDateTime = currDate.getTime();
+			// Log the Notify errors
+			console.log(`[${helpers.getLocaleDateTime()}] ERR_WORKER_SENDEMAIL: Error in Notify` );
+			const errorDetails = e?.response?.data || null;
+			let statusText, errDetails, statusCode, msg;
+			// Attach status + parsed body to error object
+
+			statusText = errorDetails?.errors?.[0]?.error || errorDetails?.status_code || null;
+			errDetails = errorDetails?.errors?.[0] || errorDetails || String(e);
+			statusCode = errorDetails?.errors?.[0]?.code || errorDetails?.status_code || null;
+			msg = errorDetails?.errors?.[0]?.message || errorDetails?.message || e?.message || String(e);
+			console.error(`[${helpers.getLocaleDateTime()}] ERR_WORKER_SENDEMAIL: Workersendemail GC Notify Single email API error:`);
+			console.error(errDetails);
+			parentPort.postMessage( { msg: `worker-Error in Notify: ${statusCode} ${statusText} - ${msg}` } );
+
 			
 			if ( statusCode === 400 && msg.indexOf( "email_address" ) !== -1 ) {
 

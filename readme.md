@@ -213,3 +213,8 @@ String that defines what language this topic is in abbrevation form.
 
 Array of pointers to other languages counterparts for the same topic. Needs ID in string of those other topics.
 
+## Error Code details:
+1. ERR_BULK_MAILER : Bulk api errors
+2. ERR_SUBSCRIPTION: Subscription email errors
+3. ERR_WORKER_SENDEMAIL: Worker send email errors
+
