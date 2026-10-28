@@ -38,7 +38,7 @@
     "mongodb": "^7.5.0",
     "morgan": "^1.11.0",
     "mustache": "^4.2.0",
-    "nodemailer": "^6.10.0",
+    "nodemailer": "^10.1.4",
     "notifications-node-client": "^8.4.0",
     "passport": "^0.7.0",
     "passport-http": "^0.3.0",
