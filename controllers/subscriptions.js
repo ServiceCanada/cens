@@ -5,7 +5,7 @@
  * @author: Government of Canada; @duboisp
  * @version: 1.0
  ===========================*/
-
+const helpers = require('./helpers');
 const NotifyClient = require('notifications-node-client').NotifyClient; // https://docs.notifications.service.gov.uk/node.html#node-js-client-documentation
 const entities = require("entities");
 const ObjectId = require('mongodb').ObjectId;
@@ -23,7 +23,7 @@ const processEnv = process.env,
 	_successJSO = processEnv.successJSO || { statusCode: 200, ok: 1 },
 	_cErrorsJSO = processEnv.cErrorsJSO ||  { statusCode: 400, bad: 1, msg: "Bad request" },
 	_sErrorsJSO = processEnv.sErrorsJSO ||  { statusCode: 500, err: 1 },
-	_notifyEndPoint = processEnv.notifyEndPoint ||  "https://api.notification.alpha.canada.ca",
+	_notifyEndPoint = processEnv.notifyEndPoint ||  "https://api.notification.canada.ca",
 	_confirmBaseURL = processEnv.confirmBaseURL ||  "https://apps.canada.ca/x-notify/subs/confirm/",
 	_nbMinutesBF = processEnv.notSendBefore || 25, // Default of 25 minutes.
 	_bypassSubscode = processEnv.subscode,
@@ -214,7 +214,6 @@ exports.addEmailPOST = async ( req, res, next ) => {
 
 		// Get the topic
 		const topic = await getTopic( topicId );
-
 		// No topic = no good
 		if ( !topic || !topic.inputErrURL || !topic.thankURL || !topic.failURL ) {
 			console.log( "addEmailPOST: check topic information" );
@@ -724,25 +723,25 @@ sendEmailViaNotify = async ( email, templateId, personalisation, notifyKey ) => 
 		}
 
 	}
-	
-	
-	
-	!_bypassSubscode && notifyClient.sendEmail( templateId, email, 
-			{
-				personalisation: personalisation,
-				reference: "x-notify_send_emails"
-			})
+
+	!_bypassSubscode &&
+	notifyClient.sendEmail( templateId, email,
+		{
+			personalisation: personalisation,
+			reference: "x-notify_send_emails"
+	})
 	.catch( ( e ) => {
-		// Log the Notify errors
+		const errorDetails = e?.response?.data || null;
 
-		console.log(e.error);
 		const currDate = new Date(),
-		currDateTime = currDate.getTime(),
-		errDetails = e.error.errors ? e.error.errors[0] : null,
-		statusCode = e.error.status_code,
-		msg = errDetails ? errDetails.message : null;
-
-
+		currDateTime = currDate.getTime();
+		let statusText, errDetails, statusCode, msg;
+		statusText = errorDetails?.errors?.[0]?.error || errorDetails?.status_code || null;
+		errDetails = errorDetails?.errors?.[0] || errorDetails || String(e);
+		statusCode = errorDetails?.errors?.[0]?.code || errorDetails?.status_code || null;
+		msg = errorDetails?.errors?.[0]?.message || errorDetails?.message || e?.message || String(e);
+		console.error(`[${helpers.getLocaleDateTime()}] ERR_SUBSCRIPTION: Workersendemail GC Notify Single email API error: `);
+		console.error(errDetails);
 
 		if ( statusCode === 400 && msg.indexOf( "email_address" ) !== -1 ) {
 

@@ -39,7 +39,7 @@ You need:
 
 * In mongo: Create at least 1 topic
 	* See the docker exec command "First run" in [docker readme](docker/readme.md)
-* Setup one (1) email confirmation template with Notify (notification.alpha.canada.ca) - That template contains at least the personalisation `(( confirm_link ))`
+* Setup one (1) email confirmation template with Notify (notification.canada.ca) - That template contains at least the personalisation `(( confirm_link ))`
 * Update the topic with the appropriate template ID and notify API key
 	* You can update by connecting to mongo via port 27016 or via command line in the docker container `x-notify-mongo`
 	* Example of mongo command: `db.topics.updateOne( { _id: "test" }, { $set: { templateId: "<Notify template id>", notifyKey: "<Your team only notify API key>" } } );`
@@ -81,7 +81,7 @@ Create a user in Database (for local database)
 * `successJSO` JavaScript Object returned on successful JSON API call. Default: `{ statusCode: 200, ok: 1 }`
 * `cErrorsJSO` JavaScript Object returned on client error, like bad email format or missing parameter. Default `{ statusCode: 400, bad: 1, msg: "Bad request" }`
 * `sErrorsJSO` JavaScript Object returned on client error, like MongoDB can't connect. Default: `{ statusCode: 500, err: 1 }`
-* `notifyEndPoint` Notify end point. Default: `https://api.notification.alpha.canada.ca`
+* `notifyEndPoint` Notify end point. Default: `https://api.notification.canada.ca`
 * `notSendBefore` Number of minute before to accept a resend email request. Default: `25`
 
 * `Host` URL of the host server. Default: `0.0.0.0`

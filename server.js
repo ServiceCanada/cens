@@ -52,7 +52,6 @@ passport.use(new BasicStrategy({ qop: 'auth' },
   }
 ));
 
-
 /**
  * Create Express server.
  */
