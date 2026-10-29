@@ -22,7 +22,9 @@ services:
     networks:
      - notify-net-1
   notify-node-1:
-    build: ./
+    build:
+      context: .
+      target: development
     container_name: notify-node-1
     ports: 
      - "8080:8080"
@@ -35,8 +37,8 @@ services:
      - notify-mongo-1
      - notify-redis-1
     volumes:
-     - .:/cens
-     - /cens/node_modules
+     - .:/usr/src/cens
+     - /usr/src/cens/node_modules
     networks:
      - notify-net-1
 volumes:
