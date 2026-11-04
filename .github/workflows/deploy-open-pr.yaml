@@ -30,11 +30,11 @@ jobs:
       pull-requests: write
 
     steps:
-      # 1. Check out the base branch (main)
+      # 1. Check out the base branch (master)
       - name: Checkout Base Branch
         uses: actions/checkout@v5
         with:
-          ref: main
+          ref: master
           fetch-depth: 0
           persist-credentials: true
 
@@ -55,11 +55,11 @@ jobs:
 
           if [ -z "$PR_BRANCHES" ] || [ "$PR_BRANCHES" = "" ]; then
             echo "has_prs=false" >> $GITHUB_OUTPUT
-            echo "No open, ready-for-review PRs found. Preview branch will reset to main."
+            echo "No open, ready-for-review PRs found. Preview branch will reset to master."
           else
             echo "has_prs=true" >> $GITHUB_OUTPUT
             # Clean up any local branches from previous runs
-            git branch | grep -v '^*' | grep -v 'main' | grep -v "${{ env.VERIFICATION_BRANCH }}" | xargs -r git branch -D || true
+            git branch | grep -v '^*' | grep -v 'master' | grep -v "${{ env.VERIFICATION_BRANCH }}" | xargs -r git branch -D || true
 
             for branch in $PR_BRANCHES; do
               echo "--------------------------------------------------"
